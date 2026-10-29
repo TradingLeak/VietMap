@@ -51,6 +51,7 @@ final class AppModel: ObservableObject {
         self.traffic = traffic
         self.tripStore = tripStore
         let testing = ProcessInfo.processInfo.arguments.contains("-ui-testing")
+            || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
         var initial = testing ? AppSettings() : AppSettings.load()
         if testing {
             initial.voiceEnabled = false

@@ -33,6 +33,7 @@ xcodebuild test -project VietMap.xcodeproj -scheme VietMap \
 - App tests: lưu / khôi phục cài đặt, từ chối nhập lỗi mà giữ tệp cũ, demo bundled bắt buộc true, phục hồi trip và không tạo lại checkpoint đã hoàn tất, kiểm tra đầu vào tải trước khi mạng chạy, khôi phục summary bị thiếu, xóa cả bản xuất tạm khi xóa trip.
 - UI smoke tests: khởi động → mô phỏng không GPS → mở / đóng HUD → dừng; mở màn hình dữ liệu chưa có gói thương mại.
 - Tham số `-ui-testing` bỏ onboarding, tắt giọng / rung và chọn sơ đồ ngoại tuyến khi test, **không thay đổi cờ demo / engine lái thật**, không cung cấp tính năng trả phí. UI smoke tests không phụ thuộc tile server Apple và không chứng nhận hiển thị / dịch vụ MapKit thực tế.
+- Host app trong XCTest unit test cũng nhận môi trường kiểm thử để không tải nền bản đồ ngoài phạm vi test.
 - CI khởi động simulator rõ ràng, tách `build-for-testing`, unit tests và UI tests, có timeout riêng để không treo pipeline vô hạn.
 
 ### IPA
