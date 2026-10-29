@@ -262,6 +262,8 @@ public final class SpeedWarningEngine: ObservableObject {
         var spokePoint = false
         for index in warnings.indices {
             let warning = warnings[index]
+            // Biển cấm rẽ thiếu hướng: chỉ hiển thị tham khảo, không phát cảnh báo pháp lý.
+            if (warning.node.type == .noLeftTurn || warning.node.type == .noRightTurn) && warning.node.bearing == nil { continue }
             if warning.distance <= effectiveAlertDistance && announced[warning.id] == nil {
                 let result = announcer.announce(message(for: warning, final: false), category: category(for: warning.node.type), priority: .normal)
                 if result == .suppressed { continue }
@@ -332,7 +334,7 @@ public final class SpeedWarningEngine: ObservableObject {
     private func category(for type: NodeType) -> AlertCategory {
         switch type {
         case .speedCamera, .redLightCamera: return .camera
-        case .speedLimit, .residentialIn, .residentialOut, .noOvertaking: return .roadSign
+        case .speedLimit, .residentialIn, .residentialOut, .noOvertaking, .noLeftTurn, .noRightTurn: return .roadSign
         case .tollBooth: return .toll
         case .railwayCrossing: return .railway
         case .incident: return .general
@@ -349,6 +351,8 @@ public final class SpeedWarningEngine: ObservableObject {
         case .tollBooth: name = "trạm thu phí"
         case .railwayCrossing: name = "giao cắt đường sắt"
         case .noOvertaking: name = "biển cấm vượt"
+        case .noLeftTurn: name = "biển cấm rẽ trái"
+        case .noRightTurn: name = "biển cấm rẽ phải"
         case .incident: name = "sự cố giao thông"
         }
         if final { return "Chú ý \(name) rất gần; bạn có thể đang vượt tốc độ." }

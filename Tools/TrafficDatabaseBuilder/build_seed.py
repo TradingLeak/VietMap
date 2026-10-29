@@ -37,6 +37,8 @@ def numeric_speed(raw):
 def build(source, destination):
     # Kiểm tra đủ file trước khi tạo DB; nội dung có thể chỉ là một vùng: người vận hành phải xác nhận.
     datasets = {name: json.loads((source / name).read_text(encoding='utf-8')) for name in ALL_FILES}
+    signs_file = source / 'turn_restrictions_vn.json'
+    datasets['turn_restrictions_vn.json'] = json.loads(signs_file.read_text(encoding='utf-8')) if signs_file.exists() else []
     if any(not isinstance(v, list) for v in datasets.values()):
         raise ValueError('Mỗi file đầu vào phải là một JSON array')
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -63,6 +65,18 @@ def build(source, destination):
                         VALUES (?,?,?,?,?,?,?,?,?,?)''',
                         (osm_id, kind, lat, lon, numeric_speed(tags.get('maxspeed')), tags.get('name'), tags.get('ref'), 'OSM', now, now))
                     counts['nodes' if cur.rowcount else 'duplicate_nodes'] += 1
+            sign_types = {'VN:P.123a': 'NO_LEFT_TURN', 'VN:P.123b': 'NO_RIGHT_TURN'}
+            for item in datasets['turn_restrictions_vn.json']:
+                lat, lon, osm_id = item['lat'], item['lon'], item['id']
+                if not position(lat, lon) or not isinstance(osm_id, int):
+                    raise ValueError('Biển rẽ có tọa độ/id không hợp lệ')
+                kind = sign_types.get((item.get('tags') or {}).get('traffic_sign'))
+                if not kind:
+                    continue
+                cur = db.execute("""INSERT OR IGNORE INTO traffic_nodes
+                    (osm_id,type,latitude,longitude,source,created_at,updated_at) VALUES (?,?,?,?,?,?,?)""",
+                    (osm_id, kind, lat, lon, 'OSM', now, now))
+                counts['nodes' if cur.rowcount else 'duplicate_nodes'] += 1
             for way in datasets['speed_limits_vn.json']:
                 tags = way.get('tags') or {}
                 speed = numeric_speed(tags.get('maxspeed'))

@@ -6,18 +6,21 @@ import CoreLocation
 struct MapViewRepresentable: UIViewRepresentable {
     @ObservedObject var viewModel: MapViewModel
     @ObservedObject private var battery = BatteryOptimizer.shared
+    @ObservedObject private var offline = OfflineMapStore.shared
     var route: Route?
+    var warnings: [WarningItem]
     var fitRoute: Bool = false
     @Environment(\.colorScheme) private var colorScheme
 
-    init(viewModel: MapViewModel, route: Route? = nil, fitRoute: Bool = false) {
-        self.viewModel = viewModel; self.route = route; self.fitRoute = fitRoute
+    init(viewModel: MapViewModel, route: Route? = nil, warnings: [WarningItem] = [], fitRoute: Bool = false) {
+        self.viewModel = viewModel; self.route = route; self.warnings = warnings; self.fitRoute = fitRoute
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(viewModel: viewModel) }
 
     private var styleURL: URL? {
-        Bundle.module.url(forResource: colorScheme == .dark ? "osm_dark_vn" : "osm_bright_vn", withExtension: "json")
+        if offline.isEnabled, let style = offline.styleURL { return style }
+        return Bundle.module.url(forResource: colorScheme == .dark ? "osm_dark_vn" : "osm_bright_vn", withExtension: "json")
     }
 
     func makeUIView(context: Context) -> MLNMapView {
@@ -49,6 +52,8 @@ struct MapViewRepresentable: UIViewRepresentable {
             map.styleURL = styleURL
         }
         if let style = map.style { context.coordinator.renderer.render(route, style: style) }
+        // Chỉ đánh dấu các điểm thực sự có trong database; không tạo biển báo giả.
+        context.coordinator.updateWarnings(warnings, on: map)
         // Dùng một nguồn vị trí thống nhất, kể cả tuyến GPX trên simulator.
         if let location = viewModel.currentLocation, viewModel.isActive {
             if context.coordinator.userAnnotation == nil {
@@ -111,6 +116,7 @@ struct MapViewRepresentable: UIViewRepresentable {
         weak var map: MLNMapView?
         var styleURL: URL?
         var userAnnotation: MLNPointAnnotation?
+        private var warningAnnotations: [Int64: WarningMapAnnotation] = [:]
         var route: Route?
         var fitEnabled = false
         var lastFittedRoute: UUID?
@@ -119,6 +125,47 @@ struct MapViewRepresentable: UIViewRepresentable {
         func mapView(_ mapView: MLNMapView, didFinishLoading style: MLNStyle) {
             renderer.styleDidChange()
             renderer.render(route, style: style)
+        }
+        func updateWarnings(_ warnings: [WarningItem], on map: MLNMapView) {
+            let visible = Array(warnings.prefix(30))
+            let ids = Set(visible.map(\.id))
+            for id in Array(warningAnnotations.keys) where !ids.contains(id) {
+                if let annotation = warningAnnotations.removeValue(forKey: id) { map.removeAnnotation(annotation) }
+            }
+            for warning in visible where warningAnnotations[warning.id] == nil {
+                let annotation = WarningMapAnnotation()
+                annotation.coordinate = CLLocationCoordinate2D(latitude: warning.node.latitude, longitude: warning.node.longitude)
+                annotation.kind = warning.node.type
+                annotation.title = "Điểm cảnh báo OSM (cần kiểm chứng)"
+                warningAnnotations[warning.id] = annotation
+                map.addAnnotation(annotation)
+            }
+        }
+        func mapView(_ mapView: MLNMapView, imageFor annotation: MLNAnnotation) -> MLNAnnotationImage? {
+            guard let warning = annotation as? WarningMapAnnotation else { return nil }
+            let id = "vietnav-warning-\(warning.kind.rawValue)"
+            if let cached = mapView.dequeueReusableAnnotationImage(withIdentifier: id) { return cached }
+            let symbol: String
+            switch warning.kind {
+            case .speedCamera, .redLightCamera: symbol = "camera.fill"
+            case .railwayCrossing: symbol = "tram.fill"
+            case .tollBooth: symbol = "creditcard.fill"
+            case .noLeftTurn: symbol = "arrow.turn.up.left"
+            case .noRightTurn: symbol = "arrow.turn.up.right"
+            default: symbol = "exclamationmark.triangle.fill"
+            }
+            let image = UIGraphicsImageRenderer(size: CGSize(width: 40, height: 40)).image { context in
+                UIColor.white.setFill(); context.cgContext.fillEllipse(in: CGRect(x: 2, y: 2, width: 36, height: 36))
+                UIColor.systemRed.setStroke(); context.cgContext.setLineWidth(4)
+                context.cgContext.strokeEllipse(in: CGRect(x: 3, y: 3, width: 34, height: 34))
+                let icon = UIImage(systemName: symbol)?.withTintColor(.black, renderingMode: .alwaysOriginal)
+                icon?.draw(in: CGRect(x: 10, y: 10, width: 20, height: 20))
+                if warning.kind == .noLeftTurn || warning.kind == .noRightTurn {
+                    UIColor.systemRed.setStroke(); context.cgContext.setLineWidth(3)
+                    context.cgContext.move(to: CGPoint(x: 7, y: 7)); context.cgContext.addLine(to: CGPoint(x: 33, y: 33)); context.cgContext.strokePath()
+                }
+            }
+            return MLNAnnotationImage(image: image, reuseIdentifier: id)
         }
         private var activeGestures = Set<ObjectIdentifier>()
         var isGesturing: Bool { !activeGestures.isEmpty }
@@ -141,4 +188,8 @@ struct MapViewRepresentable: UIViewRepresentable {
             }
         }
     }
+}
+
+private final class WarningMapAnnotation: MLNPointAnnotation {
+    var kind: NodeType = .incident
 }

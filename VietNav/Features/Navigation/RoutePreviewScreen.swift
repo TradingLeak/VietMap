@@ -5,7 +5,7 @@ import CoreLocation
 struct RoutePreviewScreen: View {
     @ObservedObject var routing: NavigationRouteViewModel
     @ObservedObject var engine: NavigationEngine
-    let currentLocation: CLLocation?
+    @ObservedObject private var locationManager: LocationManager
     let placeName: String?
     @Environment(\.dismiss) private var dismiss
     @AppStorage("vn.distanceUnit") private var unit = "km"
@@ -13,8 +13,8 @@ struct RoutePreviewScreen: View {
     @State private var longitude: String
     @State private var inputError: String?
 
-    init(routing: NavigationRouteViewModel, engine: NavigationEngine, currentLocation: CLLocation?, destination: SearchResult?) {
-        self.routing = routing; self.engine = engine; self.currentLocation = currentLocation; placeName = destination?.displayName
+    init(routing: NavigationRouteViewModel, engine: NavigationEngine, destination: SearchResult?) {
+        self.routing = routing; self.engine = engine; self._locationManager = ObservedObject(wrappedValue: .shared); placeName = destination?.displayName
         _latitude = State(initialValue: destination.map { String($0.coordinate.latitude) } ?? "")
         _longitude = State(initialValue: destination.map { String($0.coordinate.longitude) } ?? "")
     }
@@ -75,13 +75,34 @@ struct RoutePreviewScreen: View {
                         }
                     }
                 }.padding(16)
-            }.background(VNTheme.canvas).navigationTitle("Xem trước tuyến").navigationBarTitleDisplayMode(.inline)
+            }.background(VNTheme.canvas)
+                .onAppear { locationManager.beginRoutePlanning() }
+                .onDisappear { locationManager.endRoutePlanning() }
+                .onChange(of: locationManager.currentLocation?.timestamp) { _ in
+                    if let fix = locationManager.currentLocation, fix.horizontalAccuracy >= 0,
+                       fix.horizontalAccuracy <= 100, abs(fix.timestamp.timeIntervalSinceNow) <= 30 { inputError = nil }
+                }
+                .navigationTitle("Xem trước tuyến").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("Đóng") { dismiss() } } }
         }
     }
     private func calculate() {
-        guard let location = currentLocation, location.horizontalAccuracy >= 0, location.horizontalAccuracy <= 100,
-              abs(location.timestamp.timeIntervalSinceNow) <= 30 else { inputError = "Chưa có vị trí GPS mới và đủ chính xác."; return }
+        switch locationManager.authorizationStatus {
+        case .denied, .restricted:
+            inputError = "Ứng dụng chưa được cấp quyền vị trí. Hãy kiểm tra quyền VietNav trong Cài đặt."
+            return
+        case .notDetermined:
+            locationManager.beginRoutePlanning()
+            inputError = "Hãy cho phép vị trí để xác định điểm xuất phát."
+            return
+        default: break
+        }
+        guard let location = locationManager.currentLocation, location.horizontalAccuracy >= 0, location.horizontalAccuracy <= 100,
+              abs(location.timestamp.timeIntervalSinceNow) <= 30 else {
+            locationManager.beginRoutePlanning()
+            inputError = "Đang chờ vị trí GPS mới và đủ chính xác. Hãy ra nơi thoáng, bật Vị trí chính xác rồi thử lại."
+            return
+        }
         let origin = location.coordinate
         guard let lat = Double(latitude.replacingOccurrences(of: ",", with: ".")), let lon = Double(longitude.replacingOccurrences(of: ",", with: ".")),
               lat.isFinite, lon.isFinite, CLLocationCoordinate2DIsValid(CLLocationCoordinate2D(latitude: lat, longitude: lon)) else {
@@ -92,5 +113,5 @@ struct RoutePreviewScreen: View {
     }
 }
 struct RoutePreviewScreen_Previews: PreviewProvider {
-    static var previews: some View { RoutePreviewScreen(routing: NavigationRouteViewModel(), engine: NavigationEngine(), currentLocation: nil, destination: nil) }
+    static var previews: some View { RoutePreviewScreen(routing: NavigationRouteViewModel(), engine: NavigationEngine(), destination: nil) }
 }

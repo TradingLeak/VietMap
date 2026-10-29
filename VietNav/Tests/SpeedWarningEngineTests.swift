@@ -32,6 +32,18 @@ final class SpeedWarningEngineTests: XCTestCase {
         XCTAssertEqual(engine.calculateBearing(from: location.coordinate, to: .init(latitude: 0, longitude: 1)), 90, accuracy: 0.01)
     }
 
+    func testUnknownSignDirectionDoesNotSpeak() async throws {
+        let clock = Clock(), speaker = WarningRecorder()
+        let sign = TrafficNode(id: 201, type: .noLeftTurn, latitude: 0.001, longitude: 0, bearing: nil)
+        let store = FakeWarningStore(snapshot: .init(nodes: [sign], speedLimit: nil))
+        let engine = SpeedWarningEngine(store: store, locationManager: nil, announcer: speaker, now: { clock.date })
+        engine.start(); defer { engine.stop() }
+        engine.process(location: sample(clock), heading: 0)
+        try await waitFor(engine, clock.date)
+        XCTAssertEqual(engine.upcomingWarnings.first?.node.type, .noLeftTurn)
+        XCTAssertTrue(speaker.messages.isEmpty)
+    }
+
     func testHeadingControlsActualWarningDelivery() async throws {
         for (heading, expected) in [(0.0, true), (180.0, false), (90.0, false)] {
             let clock = Clock(), speaker = WarningRecorder()

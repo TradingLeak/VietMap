@@ -152,3 +152,11 @@ Tạo issue mô tả lỗi/tái hiện, đề xuất thay đổi nhỏ kèm test
 ## IPA thử nghiệm chưa ký
 
 Workflow **Build unsigned IPA** build cấu hình Release cho thiết bị iOS và tải lên artifact `VietNav-unsigned-IPA` (gồm file `.ipa` và checksum SHA-256). Đây là IPA **chưa ký**, không thể cài trực tiếp: cần ký lại app, frameworks và widget extension bằng công cụ ký tương thích cùng chứng chỉ/provisioning profile hợp lệ cho thiết bị. ESign và profile phải hỗ trợ signing extension với bundle ID tương thích; Live Activity có thể không hoạt động nếu extension không được ký/cài đúng. Không đưa certificate, private key hay profile vào repo. iPhone cần iOS 16+. Build này chưa có dữ liệu traffic seed thực và chưa được kiểm thử thực tế; không sử dụng làm chỉ dẫn an toàn khi lái xe.
+
+## Thử nghiệm bản đồ và biển báo offline
+
+Mở **Cài đặt → Bản đồ offline → Nhập bản đồ MBTiles** để chọn file do bạn có quyền sử dụng. Hỗ trợ raster PNG/JPEG và vector PBF theo schema OpenMapTiles; style vector thử nghiệm không tải glyph nên **chưa hiện tên đường/địa điểm offline**. Khi bật offline, bản đồ sử dụng file cục bộ, không tự tải tile OSM. Khu vực và zoom phụ thuộc file. Chưa có bộ MBTiles Việt Nam trong ứng dụng; ví dụ [MapTiler Vietnam](https://data.maptiler.com/downloads/dataset/osm/asia/vietnam/) có bộ vector nhưng cần tự kiểm tra giấy phép, điều kiện tải và quyền phân phối. Offline map không đồng nghĩa offline tìm kiếm/tính tuyến: Nominatim và OSRM vẫn cần mạng.
+
+Mục **Dữ liệu biển báo** có thể nhập seed SQLite do `scripts/update_osm_data.sh` tạo. Pipeline bổ sung các node OSM có tag chính xác `VN:P.123a`/`VN:P.123b`, không suy diễn quan hệ rẽ, biển thiếu tag hay hướng. Điểm cấm rẽ không có hướng chỉ hiển thị tham khảo, không đọc cảnh báo. Không có dữ liệu toàn quốc được đóng gói mặc định; dữ liệu OSM thiếu/sai/cũ có thể hiển thị sai chiều, không thay thế biển báo và luật thực tế. Import thay road_segments và node OSM cũ, giữ báo cáo trên thiết bị; chỉ import dữ liệu đáng tin cậy khi không dẫn đường.
+
+Khi mở xem trước tuyến, app yêu cầu quyền vị trí nếu cần, tạm tăng độ chính xác và theo dõi GPS mới trực tiếp thay vì giữ snapshot cũ; thông báo riêng khi quyền bị từ chối hoặc GPS chưa có fix mới. Cần kiểm thử trên iPhone với Vị trí chính xác bật, khi đổi quyền, trong nhà và khi GPS yếu.

@@ -38,6 +38,8 @@ struct SpeedWarningStatusView: View {
         case .tollBooth: return "Trạm thu phí"
         case .railwayCrossing: return "Giao cắt đường sắt"
         case .noOvertaking: return "Cấm vượt"
+        case .noLeftTurn: return "Cấm rẽ trái"
+        case .noRightTurn: return "Cấm rẽ phải"
         case .incident: return "Sự cố giao thông"
         }
     }

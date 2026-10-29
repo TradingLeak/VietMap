@@ -6,7 +6,7 @@ from pathlib import Path
 import osmium
 
 FILES = ('camera_data_vn.json', 'traffic_signals_vn.json', 'speed_limits_vn.json',
-         'residential_zones_vn.json', 'toll_booths_vn.json', 'railway_crossings_vn.json')
+         'residential_zones_vn.json', 'toll_booths_vn.json', 'railway_crossings_vn.json', 'turn_restrictions_vn.json')
 
 class Writer:
     def __init__(self, directory):
@@ -28,6 +28,7 @@ class Handler(osmium.SimpleHandler):
         if not node.location.valid(): return
         tags = dict(node.tags)
         targets = []
+        if tags.get('traffic_sign') in ('VN:P.123a', 'VN:P.123b'): targets.append('turn_restrictions_vn.json')
         if tags.get('highway') == 'speed_camera': targets.append('camera_data_vn.json')
         if tags.get('barrier') == 'toll_booth': targets.append('toll_booths_vn.json')
         if tags.get('railway') == 'level_crossing': targets.append('railway_crossings_vn.json')

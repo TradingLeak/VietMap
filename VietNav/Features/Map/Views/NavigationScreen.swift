@@ -28,7 +28,7 @@ struct NavigationScreen: View {
 
     var body: some View {
         ZStack {
-            MapViewRepresentable(viewModel: map, route: navigation.currentRoute ?? routing.selectedRoute, fitRoute: !navigation.isNavigating).ignoresSafeArea()
+            MapViewRepresentable(viewModel: map, route: navigation.currentRoute ?? routing.selectedRoute, warnings: speed.upcomingWarnings, fitRoute: !navigation.isNavigating).ignoresSafeArea()
             VStack(spacing: 10) {
                 if navigation.isNavigating, let step = navigation.currentStep {
                     TurnInstructionBanner(step: step, distance: navigation.distanceToNextManeuver, nextStep: nextStep)
@@ -53,11 +53,15 @@ struct NavigationScreen: View {
                 }
                 HStack(alignment: .top) {
                     if navigation.isNavigating, let step = navigation.currentStep, !step.lanes.isEmpty { laneStrip(step.lanes) }
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 8) {
                         SpeedHUDView(currentSpeed: speed.hasFreshLocation && speed.hasSpeedMeasurement ? speed.currentSpeed : nil,
                                      speedLimit: speed.currentSpeedLimit, isOverSpeeding: speed.isOverSpeeding)
-                        if let warning = speed.closestWarning { UpcomingWarningCard(warning: warning) }
+                        ForEach(Array(speed.upcomingWarnings.prefix(3))) { warning in
+                            UpcomingWarningCard(warning: warning)
+                        }
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 10) {
                         VStack(spacing: 1) {
                             mapButton("plus", label: "Phóng to") { map.setZoom(map.zoomLevel + 1) }
                             Rectangle().fill(VNTheme.border).frame(width: 27, height: 1)
@@ -137,9 +141,9 @@ struct NavigationScreen: View {
                     selectedPlace = place; routing.clear(); openRouteAfterSearch = true; sheet = nil
                 }
             case .route:
-                RoutePreviewScreen(routing: routing, engine: navigation, currentLocation: map.currentLocation, destination: selectedPlace)
+                RoutePreviewScreen(routing: routing, engine: navigation, destination: selectedPlace)
                     .presentationDetents([.medium, .large])
-            case .settings: SettingsScreen()
+            case .settings: SettingsScreen(isNavigating: navigation.isNavigating)
             case .report: ReportScreen(location: map.currentLocation)
             }
         }

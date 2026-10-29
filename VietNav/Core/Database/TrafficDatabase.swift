@@ -88,7 +88,7 @@ public final class TrafficDatabase {
             guard try String.fetchOne(db, sql: "PRAGMA incoming.integrity_check") == "ok",
                   try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM incoming.grdb_migrations WHERE identifier='v1_traffic'") == 1,
                   (try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM incoming.traffic_nodes") ?? 0) > 0,
-                  try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM incoming.traffic_nodes WHERE latitude NOT BETWEEN -90 AND 90 OR longitude NOT BETWEEN -180 AND 180 OR source != 'OSM' OR type NOT IN ('SPEED_CAMERA','RED_LIGHT_CAMERA','SPEED_LIMIT','RESIDENTIAL_IN','RESIDENTIAL_OUT','TOLL_BOOTH','RAILWAY_CROSSING','NO_OVERTAKING','INCIDENT')") == 0
+                  try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM incoming.traffic_nodes WHERE latitude NOT BETWEEN -90 AND 90 OR longitude NOT BETWEEN -180 AND 180 OR source != 'OSM' OR type NOT IN ('SPEED_CAMERA','RED_LIGHT_CAMERA','SPEED_LIMIT','RESIDENTIAL_IN','RESIDENTIAL_OUT','TOLL_BOOTH','RAILWAY_CROSSING','NO_OVERTAKING','NO_LEFT_TURN','NO_RIGHT_TURN','INCIDENT')") == 0
             else { throw TrafficDatabaseError.invalidUpdate }
             var installed = false
             try db.inTransaction {

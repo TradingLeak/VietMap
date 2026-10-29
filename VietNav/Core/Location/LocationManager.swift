@@ -25,6 +25,7 @@ public final class LocationManager: NSObject, ObservableObject, CLLocationManage
     private var speedSamples: [Double] = []
     private var trackingRequested = false
     private var isBackground = false
+    private var planningRoute = false
     private var pendingAlwaysRequest = false
     private var notificationTokens: [NSObjectProtocol] = []
     #if targetEnvironment(simulator)
@@ -76,6 +77,26 @@ public final class LocationManager: NSObject, ObservableObject, CLLocationManage
         updateTracking()
     }
 
+    /// Xin một GPS fix mới khi mở xem trước tuyến, thay vì đợi distanceFilter lúc rảnh.
+    public func beginRoutePlanning() {
+        planningRoute = true
+        trackingRequested = true
+        configureAccuracy()
+        requestWhenInUseAuthorization()
+        if authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse {
+            #if targetEnvironment(simulator)
+            if !simulateOnSimulator { manager.requestLocation() }
+            #else
+            manager.requestLocation()
+            #endif
+        }
+    }
+
+    public func endRoutePlanning() {
+        planningRoute = false
+        configureAccuracy()
+    }
+
     public func requestWhenInUseAuthorization() {
         switch authorizationStatus {
         case .notDetermined: manager.requestWhenInUseAuthorization()
@@ -124,6 +145,10 @@ public final class LocationManager: NSObject, ObservableObject, CLLocationManage
 
     private func configureAccuracy() {
         BatteryOptimizer.adjustAccuracy(manager, context: isNavigating ? .activeNavigation : (isBackground ? .backgroundIdle : .idle))
+        if planningRoute && !isNavigating && !isBackground {
+            manager.desiredAccuracy = kCLLocationAccuracyBest
+            manager.distanceFilter = kCLDistanceFilterNone
+        }
     }
 
     private func updateTracking() {

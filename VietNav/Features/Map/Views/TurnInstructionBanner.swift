@@ -12,7 +12,7 @@ struct TurnInstructionBanner: View {
             Image(systemName: icon(step.maneuver)).font(.system(size: 31, weight: .bold))
                 .frame(width: 44).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
-                Text(NavigationFormat.distance(distance, unit: unit)).font(.system(size: 26, weight: .bold, design: .rounded))
+                Text(NavigationFormat.distance(distance, unit: unit)).font(.system(size: 20, weight: .bold, design: .rounded))
                 Text(step.instruction).font(.subheadline.weight(.semibold)).lineLimit(2)
             }
             Spacer(minLength: 4)
@@ -23,10 +23,10 @@ struct TurnInstructionBanner: View {
                 }.opacity(0.8).accessibilityLabel("Sau đó: \(nextStep.instruction)")
             }
         }
-        .foregroundStyle(VNTheme.onAccent)
-        .padding(.horizontal, 17).padding(.vertical, 14)
+        .foregroundStyle(VNTheme.text)
+        .padding(.horizontal, 14).padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 18).fill(VNTheme.accent).shadow(color: VNTheme.shadow.opacity(0.22), radius: 10, y: 5))
+        .background(RoundedRectangle(cornerRadius: 18).fill(VNTheme.surface).shadow(color: VNTheme.shadow.opacity(0.22), radius: 10, y: 5))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(NavigationFormat.distance(distance, unit: unit)), \(step.instruction)")
     }

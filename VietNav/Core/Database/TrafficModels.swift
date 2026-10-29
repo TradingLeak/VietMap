@@ -5,6 +5,7 @@ public enum NodeType: String, Codable, CaseIterable {
     case speedCamera = "SPEED_CAMERA", redLightCamera = "RED_LIGHT_CAMERA"
     case speedLimit = "SPEED_LIMIT", residentialIn = "RESIDENTIAL_IN", residentialOut = "RESIDENTIAL_OUT"
     case tollBooth = "TOLL_BOOTH", railwayCrossing = "RAILWAY_CROSSING", noOvertaking = "NO_OVERTAKING"
+    case noLeftTurn = "NO_LEFT_TURN", noRightTurn = "NO_RIGHT_TURN"
     case incident = "INCIDENT"
 }
 

@@ -31,7 +31,7 @@ if [[ -z "$INPUT" ]]; then
 fi
 [[ -f "$INPUT" ]] || { echo 'PBF not found' >&2; exit 1; }
 # Không dùng --omit-referenced: cần node tọa độ cho ways.
-osmium tags-filter "$INPUT" n/highway=speed_camera n/highway=traffic_signals n/barrier=toll_booth n/railway=level_crossing w/maxspeed -o "$WORK/traffic.osm.pbf"
+osmium tags-filter "$INPUT" n/highway=speed_camera n/highway=traffic_signals n/barrier=toll_booth n/railway=level_crossing 'n/traffic_sign=VN:P.123a,VN:P.123b' w/maxspeed -o "$WORK/traffic.osm.pbf"
 python3 "$ROOT/Tools/PBFConverter/convert_pbf.py" "$WORK/traffic.osm.pbf" "$WORK/json"
 python3 "$ROOT/Tools/TrafficDatabaseBuilder/build_seed.py" --input "$WORK/json" --output "$WORK/vietnam_traffic.sqlite"
 python3 - "$WORK/vietnam_traffic.sqlite" "$WORK/manifest.json" <<'PY'
