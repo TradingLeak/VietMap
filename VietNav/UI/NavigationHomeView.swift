@@ -207,9 +207,26 @@ private struct SearchView: View {
     @State private var query = ""
     @State private var results: [OfflinePlace] = []
     @State private var searching = false
+    @State private var aiRequest = ""
+    @State private var aiCandidate = ""
+    @State private var aiMessage = ""
+    @State private var aiBusy = false
     var body: some View {
         NavigationView {
             List {
+                Section("HIỂU YÊU CẦU BẰNG AI TRÊN MÁY") {
+                    TextField("Ví dụ: đưa tôi đến Hồ Gươm", text: $aiRequest)
+                    Button(aiBusy ? "Đang xử lý…" : "Nhận diện địa điểm") {
+                        Task { await interpretRequest() }
+                    }.disabled(aiBusy)
+                    if !aiCandidate.isEmpty {
+                        Text("AI gợi ý: \(aiCandidate)")
+                        Button("Dùng gợi ý để tìm offline") { query = aiCandidate }
+                    }
+                    if !aiMessage.isEmpty { Text(aiMessage).font(.footnote).foregroundColor(.secondary) }
+                    Text("AI có thể hiểu sai. Kiểm tra gợi ý trước khi tìm; chưa tính tuyến. Yêu cầu chỉ được xử lý trên thiết bị khi AI khả dụng.")
+                        .font(.footnote).foregroundColor(.secondary)
+                }
                 Section("TÌM ĐỊA ĐIỂM OFFLINE") {
                     TextField("Nhập tên địa điểm", text: $query).accessibilityLabel("Địa điểm đến")
                     Text("Chọn kết quả để xem trên bản đồ. Chưa tính tuyến; dữ liệu OSM có thể thiếu hoặc sai.")
@@ -247,6 +264,13 @@ private struct SearchView: View {
                 searching = false
             }
         }
+    }
+    private func interpretRequest() async {
+        guard !aiBusy else { return }
+        aiBusy = true; aiCandidate = ""; aiMessage = ""
+        defer { aiBusy = false }
+        do { aiCandidate = try await AIPlaceInterpreter.extract(aiRequest) }
+        catch { aiMessage = error.localizedDescription }
     }
 }
 private struct NearbyOSMView: View {
