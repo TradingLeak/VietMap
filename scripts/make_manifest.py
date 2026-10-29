@@ -6,8 +6,8 @@ path, tag, output = sys.argv[1:]
 if not tag.startswith('traffic-') or not os.path.isfile(path):
     raise SystemExit('invalid tag or file')
 size = os.path.getsize(path)
-if size < 100 or size > 768 * 1024 * 1024:
-    raise SystemExit('invalid size')
+if size < 100 or size > 1800 * 1024 * 1024:
+    raise SystemExit(f'invalid database size: {size} bytes')
 hash_value = hashlib.sha256()
 with open(path, 'rb') as f:
     for block in iter(lambda: f.read(1024 * 1024), b''): hash_value.update(block)

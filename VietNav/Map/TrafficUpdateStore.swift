@@ -19,7 +19,7 @@ final class TrafficUpdateStore: ObservableObject {
         let size: Int64
         let sha256: String
     }
-    private let maxBytes: Int64 = 768 * 1024 * 1024
+    private let maxBytes: Int64 = 1800 * 1024 * 1024
     private let session: URLSession = {
         let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForRequest = 45

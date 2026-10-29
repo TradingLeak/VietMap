@@ -90,5 +90,6 @@ jobs:
         run: |
           set -euo pipefail
           TAG="traffic-v3-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          ls -lh traffic-data/
           python scripts/make_manifest.py traffic-data/vietnam-traffic.sqlite "$TAG" traffic-data/traffic-manifest.json
           gh release create "$TAG" traffic-data/vietnam-traffic.sqlite traffic-data/traffic-manifest.json traffic-data/traffic-summary.json --target "$GITHUB_SHA" --latest=false --title "Dữ liệu OSM Việt Nam $TAG" --notes "Dữ liệu OSM thô từ Geofabrik; chưa kiểm chứng, chưa hỗ trợ cảnh báo. © OpenStreetMap contributors, ODbL."
