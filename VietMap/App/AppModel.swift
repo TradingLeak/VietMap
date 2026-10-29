@@ -52,7 +52,12 @@ final class AppModel: ObservableObject {
         self.tripStore = tripStore
         let testing = ProcessInfo.processInfo.arguments.contains("-ui-testing")
         var initial = testing ? AppSettings() : AppSettings.load()
-        if testing { initial.voiceEnabled = false }
+        if testing {
+            initial.voiceEnabled = false
+            // Smoke tests exercise the real offline renderer without Apple tile-server timing.
+            initial.mapDisplay = .offline
+            initial.hapticsEnabled = false
+        }
         settings = initial
         showOnboarding = !testing && !UserDefaults.standard.bool(forKey: "vietmap.onboarding.v1")
         speech.configure(settings)

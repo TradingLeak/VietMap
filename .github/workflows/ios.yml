@@ -85,17 +85,46 @@ jobs:
         run: |
           SIMULATOR_ID="$(xcrun simctl list devices available --json | python3 scripts/select_simulator.py)"
           echo "SIMULATOR_ID=$SIMULATOR_ID" >> "$GITHUB_ENV"
-      - name: Test app storage, settings & UI smoke flows
+      - name: Boot iPhone simulator explicitly
+        timeout-minutes: 7
+        run: xcrun simctl bootstatus "$SIMULATOR_ID" -b
+      - name: Build app and test runners for simulator
+        timeout-minutes: 10
         run: |
           set -o pipefail
-          xcodebuild test \
+          xcodebuild build-for-testing \
             -project VietMap.xcodeproj -scheme VietMap -configuration Debug \
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath "$RUNNER_TEMP/VietMap-TestBuild" \
-            -resultBundlePath artifacts/Tests.xcresult \
-            -parallel-testing-enabled NO \
+            -resultBundlePath artifacts/Build-Tests.xcresult \
             CODE_SIGNING_ALLOWED=NO \
-            2>&1 | tee artifacts/ios-tests.log
+            2>&1 | tee artifacts/build-for-tests.log
+      - name: Test iOS storage and settings
+        timeout-minutes: 5
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project VietMap.xcodeproj -scheme VietMap -configuration Debug \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/VietMap-TestBuild" \
+            -resultBundlePath artifacts/Unit-Tests.xcresult \
+            -only-testing:VietMapTests -parallel-testing-enabled NO \
+            -test-timeouts-enabled YES -maximum-test-execution-time-allowance 120 \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee artifacts/ios-unit-tests.log
+      - name: Test demo HUD and data-management UI
+        timeout-minutes: 8
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project VietMap.xcodeproj -scheme VietMap -configuration Debug \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/VietMap-TestBuild" \
+            -resultBundlePath artifacts/UI-Tests.xcresult \
+            -only-testing:VietMapUITests -parallel-testing-enabled NO \
+            -test-timeouts-enabled YES -maximum-test-execution-time-allowance 180 \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee artifacts/ios-ui-tests.log
       - name: Archive arm64 device app & create unsigned IPA
         env:
           BUNDLE_ID: ${{ inputs.bundle_id || 'vn.tradingleak.vietmap' }}
@@ -116,7 +145,7 @@ jobs:
             artifacts/ESIGN.md
       - name: Annotate native build failures
         if: failure()
-        run: python3 scripts/annotate_build_log.py artifacts/core-tests.log artifacts/ios-tests.log artifacts/archive.log
+        run: python3 scripts/annotate_build_log.py artifacts/core-tests.log artifacts/build-for-tests.log artifacts/ios-unit-tests.log artifacts/ios-ui-tests.log artifacts/archive.log
       - name: Upload test results and diagnostics
         if: always()
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5 (Node 24)
