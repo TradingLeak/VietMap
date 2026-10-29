@@ -105,6 +105,7 @@ struct MapViewRepresentable: UIViewRepresentable {
         coordinator.map = nil
     }
 
+    @MainActor
     final class Coordinator: NSObject, MLNMapViewDelegate {
         var viewModel: MapViewModel
         weak var map: MLNMapView?

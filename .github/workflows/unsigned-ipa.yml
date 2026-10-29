@@ -28,7 +28,8 @@ jobs:
             python3 - "$RUNNER_TEMP/build.log" <<'PYLOG'
           import sys
           lines = open(sys.argv[1], errors='replace').read().splitlines()
-          message = '\n'.join(lines[-70:])
+          errors = list(dict.fromkeys(line for line in lines if 'error:' in line.lower() or 'fatal error:' in line.lower()))
+          message = '\n'.join(errors[-60:] if errors else lines[-60:])
           print('::error::' + message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'))
           PYLOG
             exit "$status"
