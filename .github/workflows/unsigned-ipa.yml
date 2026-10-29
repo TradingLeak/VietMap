@@ -1,0 +1,45 @@
+name: Build unsigned IPA
+on:
+  push:
+    branches: [arena/c38737e1-vietmap]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ipa:
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        run: xcodegen generate
+      - name: Build iPhone device app without signing
+        run: |
+          set -o pipefail
+          xcodebuild build -project VietNav.xcodeproj -scheme VietNav -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/VietNavDerivedData" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+      - name: Package unsigned IPA
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/VietNavDerivedData/Build/Products/Release-iphoneos/VietNav.app"
+          test -f "$APP/VietNav"
+          test -d "$APP/PlugIns/NavigationWidget.appex"
+          /usr/bin/lipo -archs "$APP/VietNav"
+          mkdir -p "$RUNNER_TEMP/package/Payload"
+          cp -R "$APP" "$RUNNER_TEMP/package/Payload/"
+          cd "$RUNNER_TEMP/package"
+          /usr/bin/zip -qry "$RUNNER_TEMP/VietNav-unsigned.ipa" Payload
+          /usr/bin/unzip -t "$RUNNER_TEMP/VietNav-unsigned.ipa"
+          shasum -a 256 "$RUNNER_TEMP/VietNav-unsigned.ipa" > "$RUNNER_TEMP/VietNav-unsigned.ipa.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VietNav-unsigned-IPA
+          path: |
+            ${{ runner.temp }}/VietNav-unsigned.ipa
+            ${{ runner.temp }}/VietNav-unsigned.ipa.sha256
+          if-no-files-found: error
+          retention-days: 14

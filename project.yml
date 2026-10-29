@@ -1,0 +1,89 @@
+name: VietNav
+options:
+  deploymentTarget:
+    iOS: "16.0"
+packages:
+  VietNav:
+    path: .
+targets:
+  VietNav:
+    type: application
+    platform: iOS
+    sources:
+      - path: VietNav/App
+      - path: VietNav/Resources
+        buildPhase: resources
+    dependencies:
+      - target: NavigationWidget
+        embed: true
+      - package: VietNav
+        product: VietNavCore
+      - package: VietNav
+        product: OSMData
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: vn.vietnav.app
+        PRODUCT_NAME: VietNav
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: VietNav/Info.plist
+  NavigationWidget:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: VietNav/ActivityWidget
+        excludes: [Info.plist]
+    dependencies:
+      - package: VietNav
+        product: NavigationActivityShared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: vn.vietnav.app.navigationwidget
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: VietNav/ActivityWidget/Info.plist
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SKIP_INSTALL: YES
+  VietNavTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: VietNav/Tests
+    dependencies:
+      - package: VietNav
+        product: VietNavCore
+      - package: VietNav
+        product: OSMData
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: vn.vietnav.app.tests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "5.9"
+  VietNavUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: Tests/VietNavUITests
+    dependencies:
+      - target: VietNav
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: vn.vietnav.app.uitests
+        TEST_TARGET_NAME: VietNav
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "5.9"
+schemes:
+  VietNav:
+    build:
+      targets:
+        VietNav: all
+        VietNavTests: [test]
+        VietNavUITests: [test]
+    test:
+      config: Debug
+      targets:
+        - VietNavTests
+        - VietNavUITests
