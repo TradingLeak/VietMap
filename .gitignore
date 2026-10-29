@@ -14,3 +14,7 @@ VietNav/Resources/InitialData/vietnam_traffic.sqlite
 osm-data/
 *.osm.pbf
 *.xcresult/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
