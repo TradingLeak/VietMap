@@ -10,6 +10,10 @@
 
 Dự án **không cung cấp chứng chỉ**, dịch vụ UDID hoặc phương pháp vượt thu hồi chứng chỉ. Không dùng chứng chỉ rò rỉ / không rõ nguồn. Không gửi file hoặc mật khẩu ký cho người khác trong chat, GitHub issue hay CI.
 
+## Link IPA trực tiếp
+
+[Tải VietMap-unsigned.ipa · 1.0.0 build 5](https://github.com/TradingLeak/VietMap/releases/download/v1.0.0-build.5/VietMap-unsigned.ipa). Không cần giải nén ZIP artifact bên ngoài. Sau khi tải, thực hiện Bước 2 và Bước 3 bên dưới. Đây vẫn là IPA **chưa ký**.
+
 ## Bước 1 · Lấy đúng file
 
 1. Mở GitHub → repo → **Actions** → run thành công **iOS · Test & Unsigned IPA**.

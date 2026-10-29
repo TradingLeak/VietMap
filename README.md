@@ -33,6 +33,8 @@
 
 **Build đã xác minh:** [run 40819971850 thành công](https://github.com/TradingLeak/VietMap/actions/runs/40819971850), **54 kiểm thử đạt + archive arm64 + IPA artifact**. [Báo cáo và link tải trực tiếp](docs/BUILD_REPORT.md). Chưa nghiệm thu trên iPhone thật / ESign thực tế.
 
+**Tải trực tiếp file IPA:** [VietMap-unsigned.ipa · 1.0.0 build 5](https://github.com/TradingLeak/VietMap/releases/download/v1.0.0-build.5/VietMap-unsigned.ipa). Đây là file IPA, không phải ZIP artifact; cần ký hợp lệ bằng ESign trước khi cài.
+
 ## 1. Lấy IPA trực tiếp trên GitHub
 
 Workflow: [**iOS · Test & Unsigned IPA**](https://github.com/TradingLeak/VietMap/actions).

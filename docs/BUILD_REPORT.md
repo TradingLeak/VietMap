@@ -5,7 +5,7 @@
 - **Commit mã ứng dụng:** `6fe176d57d1f2edb5ec5b84034d51ff10501f4f7`.
 - **Nhánh:** `arena/aae273d6-vietmap`.
 - **Phiên bản:** `1.0.0`, build `5`, minimum iOS `17.0`, kiến trúc thiết bị `arm64`.
-- Chỉ tài liệu được bổ sung sau commit đã build; không sửa mã ứng dụng sau bằng chứng này.
+- Chỉ tài liệu và workflow phát hành được bổ sung sau commit đã build; không sửa mã ứng dụng sau bằng chứng này.
 
 ## Kiểm thử thực sự đã chạy
 
@@ -21,6 +21,14 @@
 | Upload IPA, metadata / checksum / dSYM, test results | Đạt |
 
 UI smoke dùng sơ đồ ngoại tuyến để không phụ thuộc tile server Apple. Không coi đây là kiểm thử mạng MapKit, GPS hoặc Bluetooth thực tế. Một lần chạy trước đã phát hiện thao tác cuộn không đưa được nút HUD vào vùng chạm; đã sửa cách cuộn kiểm thử và tắt pan cho bản đồ preview dashboard, sau đó chạy lại thành công trên commit nêu trên.
+
+## Link IPA trực tiếp đã xuất bản
+
+- [**VietMap-unsigned.ipa · tải trực tiếp**](https://github.com/TradingLeak/VietMap/releases/download/v1.0.0-build.5/VietMap-unsigned.ipa) — không có ZIP artifact bên ngoài.
+- [GitHub prerelease v1.0.0-build.5](https://github.com/TradingLeak/VietMap/releases/tag/v1.0.0-build.5). Link release không chịu hạn lưu 14 ngày của artifact.
+- [Workflow xuất bản đã thành công](https://github.com/TradingLeak/VietMap/actions/runs/40821643489): tải đúng artifact cũ, đối chiếu checksum / metadata / Mach-O rồi upload nguyên binary; không biên dịch lại.
+- SHA-256 của file IPA, đã đối chiếu với digest release asset: `67b40af30a0ea1c429ef3c689ee6e6600542448304d59084aa92c933317eb689`.
+- IPA chưa ký; ký ESign hợp lệ trước khi cài.
 
 ## Tải kết quả
 
