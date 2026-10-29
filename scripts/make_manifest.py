@@ -6,10 +6,10 @@ path, tag, output = sys.argv[1:]
 if not tag.startswith('traffic-') or not os.path.isfile(path):
     raise SystemExit('invalid tag or file')
 size = os.path.getsize(path)
-if size < 100 or size > 256 * 1024 * 1024:
+if size < 100 or size > 768 * 1024 * 1024:
     raise SystemExit('invalid size')
 hash_value = hashlib.sha256()
 with open(path, 'rb') as f:
     for block in iter(lambda: f.read(1024 * 1024), b''): hash_value.update(block)
-manifest = {'schema': 2, 'version': tag, 'generated_at_utc': datetime.now(timezone.utc).isoformat(), 'size': size, 'sha256': hash_value.hexdigest()}
+manifest = {'schema': 3, 'version': tag, 'generated_at_utc': datetime.now(timezone.utc).isoformat(), 'size': size, 'sha256': hash_value.hexdigest()}
 with open(output, 'w', encoding='utf-8') as f: json.dump(manifest, f, indent=2)

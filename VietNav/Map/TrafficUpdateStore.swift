@@ -1,5 +1,4 @@
 import Foundation
-import CryptoKit
 
 /// Updates raw OSM extracts only; this does not activate safety warnings.
 @MainActor
@@ -20,7 +19,7 @@ final class TrafficUpdateStore: ObservableObject {
         let size: Int64
         let sha256: String
     }
-    private let maxBytes: Int64 = 256 * 1024 * 1024
+    private let maxBytes: Int64 = 768 * 1024 * 1024
     private let session: URLSession = {
         let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForRequest = 45
@@ -46,7 +45,8 @@ final class TrafficUpdateStore: ObservableObject {
             try checkedResponse(response)
             guard responseData.count < 2_000_000 else { throw UpdateError.invalidResponse }
             let releases = try JSONDecoder().decode([Release].self, from: responseData)
-            guard let release = releases.first(where: { !$0.draft && !$0.prerelease && $0.tag_name.hasPrefix("traffic-v2-") && $0.assets.contains(where: { $0.name == "traffic-manifest.json" }) && $0.assets.contains(where: { $0.name == "vietnam-traffic.sqlite" }) }),
+            let candidates = releases.filter { !$0.draft && !$0.prerelease && versionOrder($0.tag_name) != nil && $0.assets.contains(where: { $0.name == "traffic-manifest.json" }) && $0.assets.contains(where: { $0.name == "vietnam-traffic.sqlite" }) }
+            guard let release = candidates.max(by: { versionOrder($0.tag_name)! < versionOrder($1.tag_name)! }),
                   let manifestAsset = release.assets.first(where: { $0.name == "traffic-manifest.json" }),
                   let databaseAsset = release.assets.first(where: { $0.name == "vietnam-traffic.sqlite" }),
                   checkedAssetURL(manifestAsset.browser_download_url, tag: release.tag_name, name: manifestAsset.name),
@@ -55,22 +55,21 @@ final class TrafficUpdateStore: ObservableObject {
             try checkedResponse(manifestResponse)
             guard manifestData.count < 64_000 else { throw UpdateError.invalidManifest }
             let manifest = try JSONDecoder().decode(Manifest.self, from: manifestData)
-            guard manifest.schema == 2, manifest.version == release.tag_name,
+            guard manifest.schema == 3, manifest.version == release.tag_name,
                   manifest.size > 100, manifest.size <= maxBytes,
                   manifest.sha256.count == 64, manifest.sha256.allSatisfy({ $0.isHexDigit }) else { throw UpdateError.invalidManifest }
+            if let current = UserDefaults.standard.string(forKey: "trafficDataVersion"),
+               let installed = versionOrder(current), let available = versionOrder(release.tag_name), installed >= available {
+                status = "Dữ liệu đã cập nhật: \(current)."
+                return
+            }
             status = "Đang tải dữ liệu OSM…"
             let (tempURL, fileResponse) = try await session.download(from: databaseAsset.browser_download_url)
             try checkedResponse(fileResponse)
-            let attrs = try FileManager.default.attributesOfItem(atPath: tempURL.path)
-            guard (attrs[.size] as? NSNumber)?.int64Value == manifest.size else { throw UpdateError.invalidFile }
-            let handle = try FileHandle(forReadingFrom: tempURL)
-            defer { try? handle.close() }
-            guard try handle.read(upToCount: 16) == Data("SQLite format 3\0".utf8) else { throw UpdateError.invalidFile }
-            try handle.seek(toOffset: 0)
-            var sha = SHA256()
-            while let chunk = try handle.read(upToCount: 1024 * 1024), !chunk.isEmpty { sha.update(data: chunk) }
-            let actual = sha.finalize().map { String(format: "%02x", $0) }.joined()
-            guard actual == manifest.sha256.lowercased() else { throw UpdateError.invalidFile }
+            status = "Đang kiểm tra dữ liệu…"
+            try await Task.detached(priority: .utility) {
+                try TrafficDatabaseValidator.validate(url: tempURL, expectedSize: manifest.size, expectedHash: manifest.sha256)
+            }.value
             let fm = FileManager.default
             let base = try fm.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
             try fm.createDirectory(at: base, withIntermediateDirectories: true)
@@ -81,10 +80,18 @@ final class TrafficUpdateStore: ObservableObject {
             if fm.fileExists(atPath: target.path) { _ = try fm.replaceItemAt(target, withItemAt: stage) }
             else { try fm.moveItem(at: stage, to: target) }
             UserDefaults.standard.set(manifest.version, forKey: "trafficDataVersion")
-            status = "Đã tải \(manifest.version) (nguồn: \(manifest.generated_at_utc)). Chưa hỗ trợ cảnh báo."
+            status = "Đã tải \(manifest.version) (tạo lúc: \(manifest.generated_at_utc)). Chưa hỗ trợ cảnh báo."
         } catch {
             status = "Không cập nhật được: \(error.localizedDescription). Dữ liệu cũ được giữ lại."
         }
+    }
+    /// Run ID plus attempt prevents late-finishing older workflow runs from rolling data back.
+    private func versionOrder(_ tag: String) -> Int64? {
+        let parts = tag.split(separator: "-")
+        guard parts.count == 4, parts[0] == "traffic", parts[1] == "v3",
+              let run = Int64(parts[2]), let attempt = Int64(parts[3]),
+              run > 0, attempt > 0, attempt < 1000, run <= (Int64.max - attempt) / 1000 else { return nil }
+        return run * 1000 + attempt
     }
     private enum UpdateError: LocalizedError {
         case invalidResponse, noRelease, invalidManifest, invalidFile
