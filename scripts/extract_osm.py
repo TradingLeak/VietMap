@@ -4,14 +4,19 @@ import json
 import os
 import sqlite3
 import sys
+import unicodedata
 from datetime import datetime, timezone
 import osmium
 
 source, dest = sys.argv[1:]
 os.makedirs(dest, exist_ok=True)
 db = sqlite3.connect(os.path.join(dest, 'vietnam-traffic.sqlite'))
-db.executescript('''CREATE TABLE features (osm_type TEXT NOT NULL, osm_id INTEGER NOT NULL, category TEXT NOT NULL, latitude REAL, longitude REAL, tags TEXT NOT NULL, geometry TEXT, PRIMARY KEY(osm_type, osm_id)); CREATE INDEX features_category ON features(category);''')
+db.executescript('''CREATE TABLE features (osm_type TEXT NOT NULL, osm_id INTEGER NOT NULL, category TEXT NOT NULL, latitude REAL, longitude REAL, tags TEXT NOT NULL, geometry TEXT, PRIMARY KEY(osm_type, osm_id)); CREATE INDEX features_category ON features(category); CREATE TABLE places (osm_type TEXT NOT NULL, osm_id INTEGER NOT NULL, name TEXT NOT NULL, normalized TEXT NOT NULL, latitude REAL NOT NULL, longitude REAL NOT NULL, kind TEXT NOT NULL, PRIMARY KEY(osm_type, osm_id)); CREATE INDEX places_normalized ON places(normalized);''')
 counts = {}
+def normalized(text):
+    text = text.casefold().replace('đ', 'd')
+    return ''.join(c for c in unicodedata.normalize('NFD', text) if not unicodedata.combining(c))
+
 class Extract(osmium.SimpleHandler):
     def save(self, obj, typ):
         tags = {t.k: t.v for t in obj.tags}
@@ -20,7 +25,9 @@ class Extract(osmium.SimpleHandler):
         if tags.get('enforcement') in ('maxspeed', 'traffic_signals', 'average_speed'): categories.append('enforcement')
         if tags.get('traffic_sign') or tags.get('traffic_sign:forward') or tags.get('traffic_sign:backward'): categories.append('traffic_sign')
         if any(k == 'maxspeed' or k.startswith('maxspeed:') for k in tags): categories.append('maxspeed')
-        if not categories: return
+        name = tags.get('name:vi') or tags.get('name')
+        searchable = bool(name and any(key in tags for key in ('place', 'amenity', 'shop', 'tourism', 'leisure', 'building', 'highway', 'railway', 'historic', 'office', 'craft', 'public_transport')))
+        if not categories and not searchable: return
         lat = lon = None
         geometry = None
         if typ == 'node':
@@ -34,9 +41,14 @@ class Extract(osmium.SimpleHandler):
             if not coords: return
             geometry = json.dumps(coords, separators=(',', ':'))
             lon, lat = coords[len(coords)//2]
-        # Multiple classifications are retained in category as JSON.
-        db.execute('INSERT INTO features VALUES (?, ?, ?, ?, ?, ?, ?)', (typ, obj.id, json.dumps(categories), lat, lon, json.dumps(tags, ensure_ascii=False, separators=(',', ':')), geometry))
-        for c in categories: counts[c] = counts.get(c, 0) + 1
+        if categories:
+            # Multiple classifications are retained in category as JSON.
+            db.execute('INSERT INTO features VALUES (?, ?, ?, ?, ?, ?, ?)', (typ, obj.id, json.dumps(categories), lat, lon, json.dumps(tags, ensure_ascii=False, separators=(',', ':')), geometry))
+            for c in categories: counts[c] = counts.get(c, 0) + 1
+        if searchable:
+            kind = next((tags[k] for k in ('place', 'amenity', 'shop', 'tourism', 'leisure', 'building', 'highway', 'railway', 'historic', 'office', 'craft', 'public_transport') if k in tags), '')
+            db.execute('INSERT INTO places VALUES (?, ?, ?, ?, ?, ?, ?)', (typ, obj.id, name, normalized(name), lat, lon, kind))
+            counts['places'] = counts.get('places', 0) + 1
     def node(self, n): self.save(n, 'node')
     def way(self, w): self.save(w, 'way')
 

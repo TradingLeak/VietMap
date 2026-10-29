@@ -8,7 +8,7 @@ Cần macOS, Xcode 15.4+ và XcodeGen. Chạy `xcodegen generate`, mở `VietNav
 
 ## Phạm vi hiện tại
 
-Chỉ là giao diện thử nghiệm với nền bản đồ raster OpenStreetMap trực tuyến, zoom, 2D/3D, định vị và tốc độ GPS. Chưa có tìm kiếm, tính tuyến, cảnh báo thật, âm thanh, CarPlay, cập nhật dữ liệu GitHub, bản đồ offline hay background navigation. Không dùng để dẫn đường hoặc cảnh báo an toàn. Nút âm thanh hiện chỉ đổi trạng thái giao diện, chưa phát cảnh báo.
+Chỉ là giao diện thử nghiệm với nền bản đồ raster OpenStreetMap trực tuyến, zoom, 2D/3D, định vị và tốc độ GPS. Có tìm địa điểm offline từ tên OSM; chưa có tính tuyến, cảnh báo thật, âm thanh, CarPlay, cập nhật dữ liệu GitHub, bản đồ offline hay background navigation. Không dùng để dẫn đường hoặc cảnh báo an toàn. Nút âm thanh hiện chỉ đổi trạng thái giao diện, chưa phát cảnh báo.
 
 Bản đồ dùng `tile.openstreetmap.org`, phải tuân thủ [chính sách tile OSM](https://operations.osmfoundation.org/policies/tiles/), không tải hàng loạt hoặc lưu offline từ máy chủ này. Khi phát hành cần nhà cung cấp hoặc server phù hợp và ghi công OSM. Bản đồ cần mạng; các tuyến/biển trong chế độ mô phỏng là hình vẽ ví dụ không liên quan vị trí GPS.
 
@@ -26,4 +26,6 @@ GitHub Actions tải bản trích xuất Việt Nam từ Geofabrik và trích c�
 
 ## Tiến độ bổ sung
 
-Trong Cài đặt có thể chuyển giữa MapLibre/OSM trực tuyến và MapKit; đây mới là hai lớp hiển thị, chưa có tính tuyến. Build trên nhánh phiên làm việc tạo release dữ liệu OSM thô công khai có phiên bản; Cài đặt có nút tải thủ công, kiểm tra kích thước và SHA-256 trước khi thay file. File tải về chưa kết nối với công cụ cảnh báo. SHA-256 lấy từ cùng release chỉ bảo vệ khỏi lỗi truyền tải, không phải chữ ký độc lập; cần bảo vệ quyền ghi GitHub. Bản đồ offline, tìm kiếm, điều hướng, AI và cảnh báo chưa triển khai; không dùng để lái xe.
+Trong Cài đặt có thể chuyển giữa MapLibre/OSM trực tuyến và MapKit; đây mới là hai lớp hiển thị, chưa có tính tuyến. Build trên nhánh phiên làm việc tạo release dữ liệu OSM thô công khai có phiên bản; Cài đặt có nút tải thủ công, kiểm tra kích thước và SHA-256 trước khi thay file. File tải về chưa kết nối với công cụ cảnh báo. SHA-256 lấy từ cùng release chỉ bảo vệ khỏi lỗi truyền tải, không phải chữ ký độc lập; cần bảo vệ quyền ghi GitHub. Bản đồ offline, điều hướng, AI và cảnh báo chưa triển khai; không dùng để lái xe.
+
+Tìm kiếm offline dùng tên OSM của node/way trong SQLite, hỗ trợ bỏ dấu; chưa hỗ trợ địa chỉ đầy đủ, phân giải mơ hồ hoặc chỉ đường. Dữ liệu có thể thiếu và lỗi; tọa độ của way là điểm đại diện.

@@ -55,7 +55,7 @@ final class TrafficUpdateStore: ObservableObject {
             try checkedResponse(manifestResponse)
             guard manifestData.count < 64_000 else { throw UpdateError.invalidManifest }
             let manifest = try JSONDecoder().decode(Manifest.self, from: manifestData)
-            guard manifest.schema == 1, manifest.version == release.tag_name,
+            guard manifest.schema == 2, manifest.version == release.tag_name,
                   manifest.size > 100, manifest.size <= maxBytes,
                   manifest.sha256.count == 64, manifest.sha256.allSatisfy({ $0.isHexDigit }) else { throw UpdateError.invalidManifest }
             status = "Đang tải dữ liệu OSM…"

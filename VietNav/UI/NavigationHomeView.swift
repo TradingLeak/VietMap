@@ -57,7 +57,7 @@ struct NavigationHomeView: View {
                 tripBar
             }
         }
-        .sheet(isPresented: $showSearch) { SearchPlaceholderView() }
+        .sheet(isPresented: $showSearch) { SearchView(model: map) }
         .sheet(isPresented: $showSettings) { SettingsView(model: map) }
         .onChange(of: scenePhase) { phase in if phase == .background { map.stop() } }
     }
@@ -78,7 +78,7 @@ struct NavigationHomeView: View {
                         Text("TUYẾN MÔ PHỎNG · KHÔNG DÙNG ĐỂ LÁI XE").font(.system(size: 9, weight: .heavy)).foregroundColor(.orange)
                     } else {
                         Text("Bạn muốn đi đâu?").font(.system(size: 16, weight: .bold))
-                        Text("Tìm địa điểm · Đang phát triển").font(.system(size: 11)).foregroundColor(.secondary)
+                        Text("Tìm địa điểm offline · Chưa dẫn đường").font(.system(size: 11)).foregroundColor(.secondary)
                     }
                 }
                 Spacer()
@@ -193,18 +193,51 @@ private struct DemoRouteOverlay: View {
     }
 }
 
-private struct SearchPlaceholderView: View {
+private struct SearchView: View {
+    @ObservedObject var model: MapModel
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
+    @State private var results: [OfflinePlace] = []
+    @State private var searching = false
     var body: some View {
         NavigationView {
-            Form {
-                Section("ĐIỂM ĐẾN") {
-                    TextField("Nhập địa điểm hoặc địa chỉ", text: $query).accessibilityLabel("Địa điểm đến")
-                    Label("Tìm kiếm và dẫn đường đang được phát triển.", systemImage: "info.circle").font(.footnote).foregroundColor(.secondary)
+            List {
+                Section("TÌM ĐỊA ĐIỂM OFFLINE") {
+                    TextField("Nhập tên địa điểm", text: $query).accessibilityLabel("Địa điểm đến")
+                    Text("Chọn kết quả để xem trên bản đồ. Chưa tính tuyến; dữ liệu OSM có thể thiếu hoặc sai.")
+                        .font(.footnote).foregroundColor(.secondary)
                 }
-            }.navigationTitle("Tìm địa điểm").navigationBarTitleDisplayMode(.inline)
-             .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("Đóng") { dismiss() } } }
+                if searching { ProgressView("Đang tìm…") }
+                else if query.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2 && results.isEmpty {
+                    Text("Không tìm thấy địa điểm trong dữ liệu offline.").foregroundColor(.secondary)
+                }
+                ForEach(results) { place in
+                    Button {
+                        model.followsLocation = false
+                        model.mapCenter = place.coordinate
+                        model.zoom = 16
+                        dismiss()
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(place.name)
+                            Text("\(place.kind) · \(place.latitude, specifier: "%.4f"), \(place.longitude, specifier: "%.4f")")
+                                .font(.caption).foregroundColor(.secondary)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Tìm địa điểm").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("Đóng") { dismiss() } } }
+            .task(id: query) {
+                let term = query
+                guard term.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2 else { results = []; searching = false; return }
+                searching = true
+                do { try await Task.sleep(nanoseconds: 300_000_000) } catch { return }
+                let found = await Task.detached(priority: .userInitiated) { OfflinePlaceSearch.search(term) }.value
+                guard !Task.isCancelled else { return }
+                results = found
+                searching = false
+            }
         }
     }
 }
@@ -250,7 +283,7 @@ private struct SettingsView: View {
                         .font(.footnote).foregroundColor(.secondary)
                 }
                 Section("TRẠNG THÁI PHÁT TRIỂN") {
-                    Text("Đây là giao diện thử nghiệm. Chưa kết nối tìm kiếm, dẫn đường, cảnh báo thật, dữ liệu offline hay âm thanh.")
+                    Text("Đây là giao diện thử nghiệm. Chưa kết nối dẫn đường, cảnh báo thật, bản đồ offline hay âm thanh.")
                         .font(.footnote).foregroundColor(.secondary)
                 }
                 Section { Link("© OpenStreetMap contributors", destination: URL(string: "https://www.openstreetmap.org/copyright")!) }

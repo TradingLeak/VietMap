@@ -11,5 +11,5 @@ if size < 100 or size > 256 * 1024 * 1024:
 hash_value = hashlib.sha256()
 with open(path, 'rb') as f:
     for block in iter(lambda: f.read(1024 * 1024), b''): hash_value.update(block)
-manifest = {'schema': 1, 'version': tag, 'generated_at_utc': datetime.now(timezone.utc).isoformat(), 'size': size, 'sha256': hash_value.hexdigest()}
+manifest = {'schema': 2, 'version': tag, 'generated_at_utc': datetime.now(timezone.utc).isoformat(), 'size': size, 'sha256': hash_value.hexdigest()}
 with open(output, 'w', encoding='utf-8') as f: json.dump(manifest, f, indent=2)

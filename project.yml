@@ -21,6 +21,7 @@ targets:
     dependencies:
       - package: MapLibre
         product: MapLibre
+      - sdk: libsqlite3.tbd
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: vn.vietnav.app

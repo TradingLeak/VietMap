@@ -35,7 +35,12 @@ struct MapCanvas: UIViewRepresentable {
         guard !coordinator.gesturing else { return }
         if model.followsLocation, let position = model.location?.coordinate {
             map.setCenter(position, zoomLevel: model.zoom, animated: false)
-        } else if abs(map.zoomLevel - model.zoom) > 0.01 { map.setZoomLevel(model.zoom, animated: false) }
+        } else {
+            let center = map.centerCoordinate
+            if abs(center.latitude - model.mapCenter.latitude) > 0.000001 || abs(center.longitude - model.mapCenter.longitude) > 0.000001 {
+                map.setCenter(model.mapCenter, zoomLevel: model.zoom, animated: false)
+            } else if abs(map.zoomLevel - model.zoom) > 0.01 { map.setZoomLevel(model.zoom, animated: false) }
+        }
         let camera = map.camera
         camera.pitch = model.pitch
         if model.followsLocation { camera.heading = model.heading }
