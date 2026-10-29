@@ -31,3 +31,5 @@ Trong Cài đặt có thể chuyển giữa MapLibre/OSM trực tuyến và MapK
 Tìm kiếm offline dùng tên OSM của node/way trong SQLite, hỗ trợ bỏ dấu; chưa hỗ trợ địa chỉ đầy đủ, phân giải mơ hồ hoặc chỉ đường. Dữ liệu có thể thiếu và lỗi; tọa độ của way là điểm đại diện.
 
 Bộ trích xuất hiện lưu thêm dữ liệu đường và quan hệ cấm rẽ dưới dạng thô để chuẩn bị cho tính tuyến. Định dạng `road_ways.nodes` gồm các bản ghi 16 byte little-endian: ID nút int64, kinh độ int32 và vĩ độ int32 theo đơn vị 1e-7 độ. Hiện **chưa có công cụ tính tuyến hoặc diễn giải hạn chế rẽ**; dữ liệu đường không đồng nghĩa bản đồ offline.
+
+Bộ lõi đồ thị tham chiếu `scripts/routing/motorcycle.py` và các kiểm thử là bước nghiên cứu độc lập, chưa chạy trên iPhone, chưa xử lý tất cả quy tắc OSM hoặc dữ liệu toàn quốc, và tuyệt đối không được dùng để dẫn đường thực tế. Một số hạn chế rẽ phức tạp được từ chối thay vì diễn giải tùy tiện.
