@@ -17,11 +17,23 @@ jobs:
         run: xcodegen generate
       - name: Build iPhone device app without signing
         run: |
+          set +e
           set -o pipefail
           xcodebuild build -project VietNav.xcodeproj -scheme VietNav -configuration Release \
             -sdk iphoneos -destination 'generic/platform=iOS' \
             -derivedDataPath "$RUNNER_TEMP/VietNavDerivedData" \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO 2>&1 | tee "$RUNNER_TEMP/build.log"
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            python3 - "$RUNNER_TEMP/build.log" <<'PYLOG'
+          import sys
+          lines = open(sys.argv[1], errors='replace').read().splitlines()
+          matches = [line for line in lines if 'error' in line.lower() or 'failed' in line.lower()]
+          for line in (matches or lines[-20:])[-20:]:
+              print('::error::' + line.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'))
+          PYLOG
+            exit "$status"
+          fi
       - name: Package unsigned IPA
         run: |
           set -euo pipefail
