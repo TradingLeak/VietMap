@@ -4,7 +4,7 @@ on:
     branches: [arena/c38737e1-vietmap]
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   ipa:
     runs-on: macos-14
@@ -55,3 +55,14 @@ jobs:
             ${{ runner.temp }}/VietNav-unsigned.ipa.sha256
           if-no-files-found: error
           retention-days: 14
+      - name: Publish direct IPA download
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Publish unsigned IPA for direct download'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="vietnav-test-${GITHUB_RUN_ID}"
+          gh release create "$TAG" "$RUNNER_TEMP/VietNav-unsigned.ipa" "$RUNNER_TEMP/VietNav-unsigned.ipa.sha256" \
+            --target "$GITHUB_SHA" --prerelease --title "VietNav thử nghiệm - unsigned IPA" \
+            --notes "Bản thử nghiệm chưa ký; cần ký lại bằng chứng chỉ và provisioning profile phù hợp, bao gồm extension. Không dùng làm ứng dụng dẫn đường an toàn."
+          echo "IPA: https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/VietNav-unsigned.ipa" >> "$GITHUB_STEP_SUMMARY"
