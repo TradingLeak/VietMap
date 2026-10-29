@@ -73,4 +73,4 @@ struct MapCanvas: UIViewRepresentable {
         }
     }
 }
-private final class UserMarker: MLNPointAnnotation {}
+final class UserMarker: MLNPointAnnotation {}
