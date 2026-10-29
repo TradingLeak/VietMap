@@ -46,7 +46,7 @@ final class TrafficUpdateStore: ObservableObject {
             try checkedResponse(response)
             guard responseData.count < 2_000_000 else { throw UpdateError.invalidResponse }
             let releases = try JSONDecoder().decode([Release].self, from: responseData)
-            guard let release = releases.first(where: { !$0.draft && !$0.prerelease && $0.tag_name.hasPrefix("traffic-") && $0.assets.contains(where: { $0.name == "traffic-manifest.json" }) && $0.assets.contains(where: { $0.name == "vietnam-traffic.sqlite" }) }),
+            guard let release = releases.first(where: { !$0.draft && !$0.prerelease && $0.tag_name.hasPrefix("traffic-v2-") && $0.assets.contains(where: { $0.name == "traffic-manifest.json" }) && $0.assets.contains(where: { $0.name == "vietnam-traffic.sqlite" }) }),
                   let manifestAsset = release.assets.first(where: { $0.name == "traffic-manifest.json" }),
                   let databaseAsset = release.assets.first(where: { $0.name == "vietnam-traffic.sqlite" }),
                   checkedAssetURL(manifestAsset.browser_download_url, tag: release.tag_name, name: manifestAsset.name),
