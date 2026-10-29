@@ -14,40 +14,43 @@ struct NavigationHomeView: View {
             if map.isDemo { DemoRouteOverlay().ignoresSafeArea().allowsHitTesting(false) }
             VStack(spacing: 0) {
                 header
-                HStack(alignment: .top, spacing: 0) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        SpeedDial(speed: displayedSpeed, limit: map.isDemo ? 60 : nil)
-                        if map.isDemo {
-                            WarningSign(symbol: "arrow.turn.up.left", distance: "160 m")
-                            WarningSign(symbol: "arrow.turn.up.right", distance: "391 m")
-                            WarningSign(symbol: "camera.fill", distance: "398 m", prohibited: false)
-                        } else if let error = map.error {
-                            Button { if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) } } label: {
-                                Label(error, systemImage: "location.slash").font(.caption).multilineTextAlignment(.leading).padding(9)
-                                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-                            }.frame(maxWidth: 230, alignment: .leading)
-                        }
-                    }
-                    Spacer(minLength: 4)
-                    VStack(spacing: 9) {
-                        control("plus", label: "Phóng to") { map.adjustZoom(1) }
-                        control("minus", label: "Thu nhỏ") { map.adjustZoom(-1) }
-                        control(map.pitch > 0 ? "view.2d" : "view.3d", label: map.pitch > 0 ? "Chuyển bản đồ 2D" : "Chuyển bản đồ 3D") { map.pitch = map.pitch > 0 ? 0 : 45 }
-                        control("location.fill", label: "Về vị trí của tôi") { map.locate() }
-                    }
+                // Independent, bounded columns keep controls reachable on shorter screens.
+                HStack(alignment: .top, spacing: 8) {
+                    ScrollView(.vertical) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            SpeedDial(speed: displayedSpeed, limit: map.isDemo ? 60 : nil)
+                            if map.isDemo {
+                                WarningSign(symbol: "arrow.turn.up.left", distance: "160 m")
+                                WarningSign(symbol: "arrow.turn.up.right", distance: "391 m")
+                                WarningSign(symbol: "camera.fill", distance: "398 m", prohibited: false)
+                            } else if let error = map.error {
+                                Button { if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) } } label: {
+                                    Label(error, systemImage: "location.slash").font(.caption).multilineTextAlignment(.leading).padding(9)
+                                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                                }
+                            }
+                        }.frame(maxWidth: .infinity, alignment: .leading)
+                    }.frame(width: 150)
+                    Spacer(minLength: 0)
+                    ScrollView(.vertical) {
+                        VStack(spacing: 9) {
+                            control("plus", label: "Phóng to") { map.adjustZoom(1) }
+                            control("minus", label: "Thu nhỏ") { map.adjustZoom(-1) }
+                            control(map.pitch > 0 ? "view.2d" : "view.3d", label: map.pitch > 0 ? "Chuyển bản đồ 2D" : "Chuyển bản đồ 3D") { map.pitch = map.pitch > 0 ? 0 : 45 }
+                            control("location.fill", label: "Về vị trí của tôi") { map.locate() }
+                            control(map.soundEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill", label: map.soundEnabled ? "Tắt âm thanh" : "Bật âm thanh") { map.soundEnabled.toggle() }
+                            control("slider.horizontal.3", label: "Cài đặt") { showSettings = true }
+                        }.frame(maxWidth: .infinity)
+                    }.frame(width: 52)
                 }
                 .padding(.horizontal, 14).padding(.top, 15)
-                Spacer(minLength: 8)
-                HStack(alignment: .bottom) {
+                .frame(maxHeight: .infinity, alignment: .top)
+                HStack {
                     Link("© OpenStreetMap contributors", destination: URL(string: "https://www.openstreetmap.org/copyright")!)
                         .font(.system(size: 9, weight: .medium)).foregroundColor(.primary)
                         .padding(.horizontal, 6).padding(.vertical, 3).background(.regularMaterial, in: Capsule())
                     Spacer()
-                    VStack(spacing: 9) {
-                        control(map.soundEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill", label: map.soundEnabled ? "Tắt âm thanh" : "Bật âm thanh") { map.soundEnabled.toggle() }
-                        control("slider.horizontal.3", label: "Cài đặt") { showSettings = true }
-                    }
-                }.padding(.horizontal, 14).padding(.bottom, 12)
+                }.padding(.horizontal, 14).padding(.vertical, 8)
                 tripBar
             }
         }
@@ -106,7 +109,7 @@ struct NavigationHomeView: View {
     private func control(_ icon: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon).font(.system(size: 16, weight: .bold)).foregroundColor(.vnBlue)
-                .frame(width: 43, height: 43).background(Color.vnSurface, in: RoundedRectangle(cornerRadius: 11))
+                .frame(width: 44, height: 44).background(Color.vnSurface, in: RoundedRectangle(cornerRadius: 11))
                 .shadow(color: .black.opacity(0.16), radius: 4, y: 2)
         }.accessibilityLabel(label)
     }
@@ -205,6 +208,15 @@ private struct SearchPlaceholderView: View {
 private struct SettingsView: View {
     @ObservedObject var model: MapModel
     @Environment(\.dismiss) private var dismiss
+    private var trafficDataStatus: String {
+        guard let url = Bundle.main.url(forResource: "traffic-summary", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let counts = json["counts"] as? [String: Int] else {
+            return "Chưa có thống kê dữ liệu trong bản cài."
+        }
+        return "OSM thô: \(counts["traffic_sign", default: 0]) đối tượng biển báo, \(counts["maxspeed", default: 0]) đối tượng có tốc độ, \(counts["speed_camera", default: 0]) camera tốc độ. Các nhóm có thể trùng nhau."
+    }
     var body: some View {
         NavigationView {
             Form {
@@ -216,6 +228,11 @@ private struct SettingsView: View {
                 Section("VỊ TRÍ") {
                     Button("Bật và cập nhật vị trí") { model.locate() }
                     Text("Ứng dụng chỉ truy cập vị trí khi bạn chủ động cấp quyền. Chưa hỗ trợ theo dõi nền.")
+                        .font(.footnote).foregroundColor(.secondary)
+                }
+                Section("DỮ LIỆU OSM TRONG BẢN CÀI") {
+                    Text(trafficDataStatus).font(.footnote)
+                    Text("Dữ liệu OSM chưa kiểm chứng; chưa kết nối cảnh báo hoặc cập nhật tự động. Không dùng để lái xe.")
                         .font(.footnote).foregroundColor(.secondary)
                 }
                 Section("TRẠNG THÁI PHÁT TRIỂN") {

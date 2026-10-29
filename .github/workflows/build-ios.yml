@@ -3,11 +3,38 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
+  traffic-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download Vietnam OpenStreetMap extract
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --connect-timeout 30 --max-time 1200 https://download.geofabrik.de/asia/vietnam-latest.osm.pbf -o "$RUNNER_TEMP/vietnam.osm.pbf"
+          test -s "$RUNNER_TEMP/vietnam.osm.pbf"
+      - name: Extract tagged data
+        run: |
+          python -m pip install 'osmium==4.0.2'
+          python scripts/extract_osm.py "$RUNNER_TEMP/vietnam.osm.pbf" "$RUNNER_TEMP/traffic-data"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VietNav-OSM-traffic-data
+          path: ${{ runner.temp }}/traffic-data/
+          retention-days: 14
   build:
+    needs: traffic-data
     runs-on: macos-14
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: VietNav-OSM-traffic-data
+          path: VietNav/Resources/TrafficData
       - run: brew install xcodegen
       - run: xcodegen generate
       - name: Build unsigned iOS device app
@@ -31,6 +58,7 @@ jobs:
           set -euo pipefail
           APP="$RUNNER_TEMP/derived/Build/Products/Release-iphoneos/VietNav.app"
           test -f "$APP/VietNav"
+          test -f "$APP/vietnam-traffic.sqlite"
           mkdir -p "$RUNNER_TEMP/ipa/Payload"
           cp -R "$APP" "$RUNNER_TEMP/ipa/Payload/"
           cd "$RUNNER_TEMP/ipa"
