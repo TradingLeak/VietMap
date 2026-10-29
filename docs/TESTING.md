@@ -46,6 +46,10 @@ python3 scripts/verify_ipa.py artifacts/VietMap-unsigned.ipa \
 
 Chỉ nhận một app `Payload/*.app`, plist iPhoneOS, executable đúng quyền thực thi, Mach-O arm64 với platform iOS device (không phải arm64 simulator), min iOS 17 và không còn chữ ký / profile của ứng dụng. Kiểm tra này không xác minh profile ESign của bạn.
 
+## Bằng chứng build mới nhất
+
+[Báo cáo build 40819971850](BUILD_REPORT.md): commit `6fe176d`, **54 test đạt**, simulator build, Release archive arm64 và upload IPA thành công. Các mục thiết bị thật phía dưới vẫn chưa được xác minh.
+
 ## Bằng chứng build ban đầu
 
 Run [40817578568](https://github.com/TradingLeak/VietMap/actions/runs/40817578568), commit `385c1c8`, đã hoàn tất thành công ngày **2026-10-29**: validation, Swift core tests, iOS unit/UI smoke tests, archive arm64, kiểm tra IPA và upload artifact. Các thay đổi sau commit đó cần dùng kết quả run tương ứng; xem tab Actions để biết trạng thái mới nhất.

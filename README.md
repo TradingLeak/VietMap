@@ -31,6 +31,8 @@
 - Không có dữ liệu VIETMAP thương mại, traffic thời gian thực quốc gia, radar, nhận dạng biển báo bằng camera, tra cứu hồ sơ phạt nguội, CarPlay hoặc cam kết làn đường chính xác đi kèm.
 - GPS nền có thể bị iOS giới hạn khi tiết kiệm pin, mất quyền hoặc buộc đóng app. Chỉ kiểm thử simulator không thể xác nhận GPS / Bluetooth / nền thực tế.
 
+**Build đã xác minh:** [run 40819971850 thành công](https://github.com/TradingLeak/VietMap/actions/runs/40819971850), **54 kiểm thử đạt + archive arm64 + IPA artifact**. [Báo cáo và link tải trực tiếp](docs/BUILD_REPORT.md). Chưa nghiệm thu trên iPhone thật / ESign thực tế.
+
 ## 1. Lấy IPA trực tiếp trên GitHub
 
 Workflow: [**iOS · Test & Unsigned IPA**](https://github.com/TradingLeak/VietMap/actions).
@@ -40,7 +42,7 @@ Workflow: [**iOS · Test & Unsigned IPA**](https://github.com/TradingLeak/VietMa
 3. Khi workflow đã có trên **nhánh mặc định**, cũng có thể chọn **Run workflow**, chọn nhánh và nhập:
    - `bundle_id`: mặc định `vn.tradingleak.vietmap`;
    - `version`: ví dụ `1.0.0`.
-   - Trước khi file workflow được merge vào nhánh mặc định, có thể chưa có nút Run workflow; run tự động theo push vẫn là cách sử dụng ban đầu.
+   - Trước khi file workflow được merge vào nhánh mặc định, có thể chưa có nút Run workflow; dùng run tự động theo push hoặc **Re-run all jobs** trên run đã có.
 4. Chỉ khi kiểm thử và archive thành công mới có artifact **`VietMap-unsigned-ipa`**.
 5. Tải artifact `.zip`, **giải nén**, lấy **`VietMap-unsigned.ipa`**. Không đổi đuôi ZIP artifact thành IPA.
 6. Cùng artifact có `SHA256SUMS.txt`, `build-info.json`, `VietMap-dSYMs.zip` và `ESIGN.md`.
