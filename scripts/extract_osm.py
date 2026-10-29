@@ -12,7 +12,7 @@ import osmium
 source, dest = sys.argv[1:]
 os.makedirs(dest, exist_ok=True)
 db = sqlite3.connect(os.path.join(dest, 'vietnam-traffic.sqlite'))
-db.executescript('''CREATE TABLE features (osm_type TEXT NOT NULL, osm_id INTEGER NOT NULL, category TEXT NOT NULL, latitude REAL, longitude REAL, tags TEXT NOT NULL, geometry TEXT, PRIMARY KEY(osm_type, osm_id)); CREATE INDEX features_category ON features(category); CREATE INDEX features_position ON features(latitude, longitude); CREATE TABLE places (osm_type TEXT NOT NULL, osm_id INTEGER NOT NULL, name TEXT NOT NULL, normalized TEXT NOT NULL, latitude REAL NOT NULL, longitude REAL NOT NULL, kind TEXT NOT NULL, PRIMARY KEY(osm_type, osm_id)); CREATE INDEX places_normalized ON places(normalized); CREATE TABLE enforcement_relations (osm_id INTEGER PRIMARY KEY, tags TEXT NOT NULL, members TEXT NOT NULL); CREATE TABLE road_ways (osm_id INTEGER PRIMARY KEY, tags TEXT NOT NULL, nodes BLOB NOT NULL); CREATE TABLE turn_restrictions (osm_id INTEGER PRIMARY KEY, tags TEXT NOT NULL, members TEXT NOT NULL);''')
+db.executescript('''CREATE TABLE features (osm_type TEXT NOT NULL, osm_id INTEGER NOT NULL, category TEXT NOT NULL, latitude REAL, longitude REAL, tags TEXT NOT NULL, geometry TEXT, PRIMARY KEY(osm_type, osm_id)); CREATE INDEX features_category ON features(category); CREATE INDEX features_position ON features(latitude, longitude); CREATE TABLE places (osm_type TEXT NOT NULL, osm_id INTEGER NOT NULL, name TEXT NOT NULL, normalized TEXT NOT NULL, latitude REAL NOT NULL, longitude REAL NOT NULL, kind TEXT NOT NULL, PRIMARY KEY(osm_type, osm_id)); CREATE INDEX places_normalized ON places(normalized); CREATE TABLE enforcement_relations (osm_id INTEGER PRIMARY KEY, tags TEXT NOT NULL, members TEXT NOT NULL); CREATE TABLE road_ways (osm_id INTEGER PRIMARY KEY, tags TEXT NOT NULL, nodes BLOB NOT NULL); CREATE TABLE turn_restrictions (osm_id INTEGER PRIMARY KEY, tags TEXT NOT NULL, members TEXT NOT NULL); CREATE VIRTUAL TABLE road_bounds USING rtree(id, min_lon, max_lon, min_lat, max_lat);''')
 counts = {}
 def normalized(text):
     text = text.casefold().replace('đ', 'd')
@@ -48,6 +48,7 @@ class Extract(osmium.SimpleHandler):
             lon, lat = coords[len(coords)//2]
         if road and len(coords) >= 2:
             db.execute('INSERT INTO road_ways VALUES (?, ?, ?)', (obj.id, json.dumps(tags, ensure_ascii=False, separators=(',', ':')), bytes(road_nodes)))
+            db.execute('INSERT INTO road_bounds VALUES (?, ?, ?, ?, ?)', (obj.id, min(c[0] for c in coords), max(c[0] for c in coords), min(c[1] for c in coords), max(c[1] for c in coords)))
             counts['road_ways'] = counts.get('road_ways', 0) + 1
         if categories:
             # Multiple classifications are retained in category as JSON.

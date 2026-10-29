@@ -12,8 +12,11 @@ struct NavigationHomeView: View {
     var body: some View {
         ZStack {
             Group {
-                if map.provider == .osm { MapCanvas(model: map) }
-                else { AppleMapCanvas(model: map) }
+                switch map.provider {
+                case .osm: MapCanvas(model: map)
+                case .osmOffline: OfflineRoadCanvas(model: map)
+                case .apple: AppleMapCanvas(model: map)
+                }
             }.ignoresSafeArea()
             if map.isDemo { DemoRouteOverlay().ignoresSafeArea().allowsHitTesting(false) }
             VStack(spacing: 0) {
@@ -40,7 +43,9 @@ struct NavigationHomeView: View {
                         VStack(spacing: 9) {
                             control("plus", label: "Phóng to") { map.adjustZoom(1) }
                             control("minus", label: "Thu nhỏ") { map.adjustZoom(-1) }
-                            control(map.pitch > 0 ? "view.2d" : "view.3d", label: map.pitch > 0 ? "Chuyển bản đồ 2D" : "Chuyển bản đồ 3D") { map.pitch = map.pitch > 0 ? 0 : 45 }
+                            if map.provider != .osmOffline {
+                                control(map.pitch > 0 ? "view.2d" : "view.3d", label: map.pitch > 0 ? "Chuyển bản đồ 2D" : "Chuyển bản đồ 3D") { map.pitch = map.pitch > 0 ? 0 : 45 }
+                            }
                             control("location.fill", label: "Về vị trí của tôi") { map.locate() }
                             control(map.soundEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill", label: map.soundEnabled ? "Tắt âm thanh" : "Bật âm thanh") { map.soundEnabled.toggle() }
                             control("bell", label: "Điểm OSM gần đây") { showNearby = true }
@@ -51,7 +56,7 @@ struct NavigationHomeView: View {
                 .padding(.horizontal, 14).padding(.top, 15)
                 .frame(maxHeight: .infinity, alignment: .top)
                 HStack {
-                    if map.provider == .osm { Link("© OpenStreetMap contributors", destination: URL(string: "https://www.openstreetmap.org/copyright")!)
+                    if map.provider != .apple { Link("© OpenStreetMap contributors", destination: URL(string: "https://www.openstreetmap.org/copyright")!)
                         .font(.system(size: 9, weight: .medium)).foregroundColor(.primary)
                         .padding(.horizontal, 6).padding(.vertical, 3).background(.regularMaterial, in: Capsule()) }
                     Spacer()
@@ -316,7 +321,7 @@ private struct SettingsView: View {
                     Picker("Nguồn bản đồ", selection: $model.provider) {
                         ForEach(MapProvider.allCases) { provider in Text(provider.rawValue).tag(provider) }
                     }
-                    Text("Cả hai bản đồ hiện cần mạng; MapKit không đảm bảo có bản đồ offline. Chuyển bản đồ chưa hỗ trợ dẫn đường.")
+                    Text("OSM offline thử nghiệm chỉ vẽ đường, không có đầy đủ công trình hoặc địa hình. MapKit và OSM trực tuyến cần mạng. Chưa có dẫn đường.")
                         .font(.footnote).foregroundColor(.secondary)
                 }
                 Section("GIAO DIỆN") {
@@ -338,7 +343,7 @@ private struct SettingsView: View {
                         .font(.footnote).foregroundColor(.secondary)
                 }
                 Section("TRẠNG THÁI PHÁT TRIỂN") {
-                    Text("Đây là giao diện thử nghiệm. Chưa kết nối dẫn đường, cảnh báo thật, bản đồ offline hay âm thanh.")
+                    Text("Đây là giao diện thử nghiệm. Chưa kết nối dẫn đường, cảnh báo thật, bản đồ offline đầy đủ hay âm thanh.")
                         .font(.footnote).foregroundColor(.secondary)
                 }
                 Section { Link("© OpenStreetMap contributors", destination: URL(string: "https://www.openstreetmap.org/copyright")!) }

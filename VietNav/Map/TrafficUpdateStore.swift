@@ -55,7 +55,7 @@ final class TrafficUpdateStore: ObservableObject {
             try checkedResponse(manifestResponse)
             guard manifestData.count < 64_000 else { throw UpdateError.invalidManifest }
             let manifest = try JSONDecoder().decode(Manifest.self, from: manifestData)
-            guard manifest.schema == 3, manifest.version == release.tag_name,
+            guard manifest.schema == 4, manifest.version == release.tag_name,
                   manifest.size > 100, manifest.size <= maxBytes,
                   manifest.sha256.count == 64, manifest.sha256.allSatisfy({ $0.isHexDigit }) else { throw UpdateError.invalidManifest }
             if let current = UserDefaults.standard.string(forKey: "trafficDataVersion"),
@@ -88,7 +88,7 @@ final class TrafficUpdateStore: ObservableObject {
     /// Run ID plus attempt prevents late-finishing older workflow runs from rolling data back.
     private func versionOrder(_ tag: String) -> Int64? {
         let parts = tag.split(separator: "-")
-        guard parts.count == 4, parts[0] == "traffic", parts[1] == "v3",
+        guard parts.count == 4, parts[0] == "traffic", parts[1] == "v4",
               let run = Int64(parts[2]), let attempt = Int64(parts[3]),
               run > 0, attempt > 0, attempt < 1000, run <= (Int64.max - attempt) / 1000 else { return nil }
         return run * 1000 + attempt

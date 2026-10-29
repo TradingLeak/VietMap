@@ -36,7 +36,7 @@ enum TrafficDatabaseValidator {
         var features: OpaquePointer?
         guard sqlite3_prepare_v2(db, "SELECT osm_type, osm_id, category, latitude, longitude, tags, geometry FROM features LIMIT 0", -1, &features, nil) == SQLITE_OK else { throw ValidationError.invalidFile }
         sqlite3_finalize(features)
-        for sql in ["SELECT osm_id, tags, nodes FROM road_ways LIMIT 0", "SELECT osm_id, tags, members FROM turn_restrictions LIMIT 0", "SELECT osm_id, tags, members FROM enforcement_relations LIMIT 0"] {
+        for sql in ["SELECT id, min_lon, max_lon, min_lat, max_lat FROM road_bounds LIMIT 0", "SELECT osm_id, tags, nodes FROM road_ways LIMIT 0", "SELECT osm_id, tags, members FROM turn_restrictions LIMIT 0", "SELECT osm_id, tags, members FROM enforcement_relations LIMIT 0"] {
             var table: OpaquePointer?
             guard sqlite3_prepare_v2(db, sql, -1, &table, nil) == SQLITE_OK else { throw ValidationError.invalidFile }
             sqlite3_finalize(table)

@@ -3,7 +3,8 @@ import CoreLocation
 import Combine
 
 enum MapProvider: String, CaseIterable, Identifiable {
-    case osm = "OpenStreetMap"
+    case osm = "OSM trực tuyến"
+    case osmOffline = "OSM offline · đường"
     case apple = "Apple MapKit"
     var id: String { rawValue }
 }

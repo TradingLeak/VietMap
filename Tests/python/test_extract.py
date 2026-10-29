@@ -33,6 +33,9 @@ class ExtractionTest(unittest.TestCase):
             road = db.execute('SELECT nodes FROM road_ways WHERE osm_id = 3').fetchone()[0]
             self.assertEqual(struct.unpack('<qii', road[:16]), (1, 1050000000, 210000000))
             self.assertEqual(len(road), 32)
+            hit = db.execute('SELECT id FROM road_bounds WHERE min_lon <= ? AND max_lon >= ? AND min_lat <= ? AND max_lat >= ?', (105.05, 105.05, 21.05, 21.05)).fetchall()
+            self.assertEqual(hit, [(3,)])
+            self.assertEqual(db.execute('SELECT id FROM road_bounds WHERE min_lon <= ? AND max_lon >= ? AND min_lat <= ? AND max_lat >= ?', (100, 100, 21, 21)).fetchall(), [])
             self.assertEqual(json.loads(db.execute('SELECT tags FROM turn_restrictions WHERE osm_id = 5').fetchone()[0])['restriction'], 'no_right_turn')
             members = json.loads(db.execute('SELECT members FROM enforcement_relations WHERE osm_id = 4').fetchone()[0])
             self.assertEqual([(m['type'], m['ref'], m['role']) for m in members], [('n', 1, 'device'), ('w', 3, 'from')])

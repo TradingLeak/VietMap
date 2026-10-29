@@ -16,7 +16,7 @@ enum OfflinePlaceSearch {
         let fm = FileManager.default
         if let base = try? fm.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: false) {
             let updated = base.appendingPathComponent("vietnam-traffic.sqlite")
-            if fm.fileExists(atPath: updated.path) { return updated }
+            if (UserDefaults.standard.string(forKey: "trafficDataVersion") ?? "").hasPrefix("traffic-v4-"), fm.fileExists(atPath: updated.path) { return updated }
         }
         return Bundle.main.url(forResource: "vietnam-traffic", withExtension: "sqlite")
     }
