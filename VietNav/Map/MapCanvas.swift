@@ -8,7 +8,7 @@ struct MapCanvas: UIViewRepresentable {
     func makeUIView(context: Context) -> MLNMapView {
         let map = MLNMapView(frame: .zero, styleURL: Bundle.main.url(forResource: "osm", withExtension: "json"))
         map.delegate = context.coordinator
-        map.setCenter(CLLocationCoordinate2D(latitude: 21.0285, longitude: 105.8542), zoomLevel: model.zoom, animated: false)
+        map.setCenter(model.mapCenter, zoomLevel: model.zoom, animated: false)
         map.logoView.isHidden = true
         map.attributionButtonPosition = .bottomLeft
         map.attributionButtonMargins = CGPoint(x: 8, y: 160)
@@ -57,7 +57,7 @@ struct MapCanvas: UIViewRepresentable {
             case .began: gestures.insert(id); model.followsLocation = false
             case .ended, .cancelled, .failed:
                 gestures.remove(id)
-                if gestures.isEmpty, let map = gesture.view as? MLNMapView { model.zoom = map.zoomLevel }
+                if gestures.isEmpty, let map = gesture.view as? MLNMapView { model.zoom = map.zoomLevel; model.mapCenter = map.centerCoordinate }
             default: break
             }
         }

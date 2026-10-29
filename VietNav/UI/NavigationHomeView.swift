@@ -10,7 +10,10 @@ struct NavigationHomeView: View {
 
     var body: some View {
         ZStack {
-            MapCanvas(model: map).ignoresSafeArea()
+            Group {
+                if map.provider == .osm { MapCanvas(model: map) }
+                else { AppleMapCanvas(model: map) }
+            }.ignoresSafeArea()
             if map.isDemo { DemoRouteOverlay().ignoresSafeArea().allowsHitTesting(false) }
             VStack(spacing: 0) {
                 header
@@ -46,9 +49,9 @@ struct NavigationHomeView: View {
                 .padding(.horizontal, 14).padding(.top, 15)
                 .frame(maxHeight: .infinity, alignment: .top)
                 HStack {
-                    Link("© OpenStreetMap contributors", destination: URL(string: "https://www.openstreetmap.org/copyright")!)
+                    if map.provider == .osm { Link("© OpenStreetMap contributors", destination: URL(string: "https://www.openstreetmap.org/copyright")!)
                         .font(.system(size: 9, weight: .medium)).foregroundColor(.primary)
-                        .padding(.horizontal, 6).padding(.vertical, 3).background(.regularMaterial, in: Capsule())
+                        .padding(.horizontal, 6).padding(.vertical, 3).background(.regularMaterial, in: Capsule()) }
                     Spacer()
                 }.padding(.horizontal, 14).padding(.vertical, 8)
                 tripBar
@@ -207,6 +210,7 @@ private struct SearchPlaceholderView: View {
 }
 private struct SettingsView: View {
     @ObservedObject var model: MapModel
+    @StateObject private var updater = TrafficUpdateStore()
     @Environment(\.dismiss) private var dismiss
     private var trafficDataStatus: String {
         guard let url = Bundle.main.url(forResource: "traffic-summary", withExtension: "json"),
@@ -220,6 +224,13 @@ private struct SettingsView: View {
     var body: some View {
         NavigationView {
             Form {
+                Section("BẢN ĐỒ") {
+                    Picker("Nguồn bản đồ", selection: $model.provider) {
+                        ForEach(MapProvider.allCases) { provider in Text(provider.rawValue).tag(provider) }
+                    }
+                    Text("Cả hai bản đồ hiện cần mạng; MapKit không đảm bảo có bản đồ offline. Chuyển bản đồ chưa hỗ trợ dẫn đường.")
+                        .font(.footnote).foregroundColor(.secondary)
+                }
                 Section("GIAO DIỆN") {
                     Toggle("Xem giao diện mô phỏng", isOn: $model.isDemo)
                     Text("Tuyến, tốc độ, biển báo và thời gian trong chế độ mô phỏng đều là ví dụ, không dùng khi lái xe.")
@@ -232,7 +243,10 @@ private struct SettingsView: View {
                 }
                 Section("DỮ LIỆU OSM TRONG BẢN CÀI") {
                     Text(trafficDataStatus).font(.footnote)
-                    Text("Dữ liệu OSM chưa kiểm chứng; chưa kết nối cảnh báo hoặc cập nhật tự động. Không dùng để lái xe.")
+                    if let version = UserDefaults.standard.string(forKey: "trafficDataVersion") { Text("Bản đã tải: \(version)").font(.footnote) }
+                    Button(updater.busy ? "Đang cập nhật…" : "Kiểm tra cập nhật dữ liệu") { Task { await updater.update() } }.disabled(updater.busy)
+                    Text(updater.status).font(.footnote).foregroundColor(.secondary)
+                    Text("Dữ liệu OSM chưa kiểm chứng; chưa kết nối cảnh báo. Không dùng để lái xe.")
                         .font(.footnote).foregroundColor(.secondary)
                 }
                 Section("TRẠNG THÁI PHÁT TRIỂN") {

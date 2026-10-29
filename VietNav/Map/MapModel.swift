@@ -2,6 +2,12 @@ import Foundation
 import CoreLocation
 import Combine
 
+enum MapProvider: String, CaseIterable, Identifiable {
+    case osm = "OpenStreetMap"
+    case apple = "Apple MapKit"
+    var id: String { rawValue }
+}
+
 /// Nguồn vị trí cho giao diện: chỉ theo dõi khi người dùng chủ động cho phép.
 @MainActor
 final class MapModel: NSObject, ObservableObject, CLLocationManagerDelegate {
@@ -9,6 +15,8 @@ final class MapModel: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published private(set) var heading: CLLocationDirection = 0
     @Published private(set) var authorization: CLAuthorizationStatus
     @Published private(set) var error: String?
+    @Published var provider: MapProvider = .osm
+    @Published var mapCenter = CLLocationCoordinate2D(latitude: 21.0285, longitude: 105.8542)
     @Published var zoom: Double = 16
     @Published var pitch: CGFloat = 45
     @Published var followsLocation = true
