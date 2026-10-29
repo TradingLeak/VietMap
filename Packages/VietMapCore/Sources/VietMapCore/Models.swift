@@ -135,11 +135,10 @@ public struct TrafficDataset: Codable, Equatable, Sendable {
 
     public func validate() throws {
         guard schemaVersion == 1 else { throw DatasetError.invalid("Phiên bản dữ liệu không được hỗ trợ.") }
-        guard !id.isEmpty, id.count <= 128, !name.isEmpty, name.count <= 200, !version.isEmpty, version.count <= 64 else {
+        guard Self.validText(id, maximum: 128), Self.validText(name, maximum: 200), Self.validText(version, maximum: 64) else {
             throw DatasetError.invalid("Thông tin bộ dữ liệu không hợp lệ.")
         }
-        guard !source.name.isEmpty, !source.license.isEmpty, !source.attribution.isEmpty,
-              [source.name, source.license, source.attribution, source.url].allSatisfy({ $0.count <= 2_000 }),
+        guard [source.name, source.license, source.attribution, source.url].allSatisfy({ Self.validText($0, maximum: 2_000) }),
               let url = URL(string: source.url), url.scheme == "https", url.host != nil, url.user == nil, url.password == nil else {
             throw DatasetError.invalid("Cần khai báo nguồn, URL HTTPS, giấy phép và ghi công dữ liệu.")
         }
@@ -148,20 +147,20 @@ public struct TrafficDataset: Codable, Equatable, Sendable {
         }
         var roadIDs = Set<String>()
         for road in roads {
-            guard !road.id.isEmpty, road.id.count <= 128, roadIDs.insert(road.id).inserted,
-                  road.name.count <= 200, road.start.isValid, road.end.isValid,
+            guard Self.validText(road.id, maximum: 128), roadIDs.insert(road.id).inserted,
+                  Self.validText(road.name, maximum: 200, allowEmpty: true), road.start.isValid, road.end.isValid,
                   abs(road.start.longitude - road.end.longitude) <= 1,
                   (1...5_000).contains(road.start.distance(to: road.end)), Self.validLimit(road.speedLimit) else {
-                throw DatasetError.invalid("Đoạn đường không hợp lệ hoặc trùng ID: \(road.id.prefix(60)).")
+                throw DatasetError.invalid("Đoạn đường không hợp lệ hoặc trùng ID: \(String(decoding: road.id.utf8.prefix(80), as: UTF8.self)).")
             }
         }
         var hazardIDs = Set<String>()
         for hazard in hazards {
-            guard !hazard.id.isEmpty, hazard.id.count <= 128, hazardIDs.insert(hazard.id).inserted,
-                  hazard.name.count <= 200, hazard.coordinate.isValid, Self.validLimit(hazard.speedLimit),
+            guard Self.validText(hazard.id, maximum: 128), hazardIDs.insert(hazard.id).inserted,
+                  Self.validText(hazard.name, maximum: 200, allowEmpty: true), hazard.coordinate.isValid, Self.validLimit(hazard.speedLimit),
                   hazard.heading.map({ $0.isFinite && (0..<360).contains($0) }) ?? true,
                   hazard.roadID.map({ roadIDs.contains($0) }) ?? true else {
-                throw DatasetError.invalid("Điểm cảnh báo không hợp lệ hoặc trùng ID: \(hazard.id.prefix(60)).")
+                throw DatasetError.invalid("Điểm cảnh báo không hợp lệ hoặc trùng ID: \(String(decoding: hazard.id.utf8.prefix(80), as: UTF8.self)).")
             }
         }
     }
@@ -180,6 +179,11 @@ public struct TrafficDataset: Codable, Equatable, Sendable {
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         return try encoder.encode(self)
+    }
+
+    private static func validText(_ value: String, maximum: Int, allowEmpty: Bool = false) -> Bool {
+        value.utf8.count <= maximum * 4 && value.count <= maximum
+            && (allowEmpty || !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
     }
 
     private static func validLimit(_ limit: Int?) -> Bool { limit.map { (5...160).contains($0) } ?? true }

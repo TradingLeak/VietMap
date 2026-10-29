@@ -22,7 +22,7 @@ def main():
     subprocess.run([sys.executable, str(ROOT / "scripts/generate_project.py"), "--check"], check=True)
     info = plistlib.loads((ROOT / "VietMap/Info.plist").read_bytes())
     check(info["CFBundleIdentifier"] == "$(PRODUCT_BUNDLE_IDENTIFIER)", "Bundle ID must be configurable")
-    check(info["UIBackgroundModes"] == ["location"], "Only explicit location background mode is expected")
+    check(info["UIBackgroundModes"] == ["location", "audio"], "Only navigation location/audio background modes are expected")
     check(info.get("NSAppTransportSecurity", {}).get("NSAllowsArbitraryLoads") is not True, "Do not disable HTTPS enforcement")
     check(info["NSLocationWhenInUseUsageDescription"] and info["NSLocationAlwaysAndWhenInUseUsageDescription"], "Missing location purpose strings")
     check(not info["UIFileSharingEnabled"], "Private trip storage must not be exposed by default")

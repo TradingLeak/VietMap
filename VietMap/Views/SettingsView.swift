@@ -75,7 +75,7 @@ struct SettingsView: View {
             }
             Section {
                 HStack { Text("VietMap"); Spacer(); Text(version).foregroundStyle(.secondary) }
-                Link("Mã nguồn & hướng dẫn build IPA", destination: URL(string: "https://github.com/TradingLeak/VietMap")!)
+                if let sourceURL = URL(string: "https://github.com/TradingLeak/VietMap") { Link("Mã nguồn & hướng dẫn build IPA", destination: sourceURL) }
                 Text("Dự án độc lập. Không liên kết với VIETMAP hoặc VietHUD. Không sao chép dữ liệu, âm thanh hay mã nguồn chưa có quyền sử dụng.").font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -99,6 +99,7 @@ struct PrivacyView: View {
             Section("Trên thiết bị của bạn") {
                 Text("Vị trí GPS được dùng cho tốc độ, cảnh báo và nhật ký. Nhật ký nằm trong vùng dữ liệu riêng của ứng dụng, được bảo vệ bằng cơ chế bảo vệ tệp của iOS sau lần mở khóa đầu tiên. Không có tài khoản, quảng cáo hoặc SDK phân tích của dự án.")
                 Text("Dữ liệu hành trình có thể nằm trong bản sao lưu thiết bị theo cài đặt iCloud của bạn. Dữ liệu giao thông tải lại được được loại khỏi sao lưu. Gỡ ứng dụng sẽ xóa dữ liệu cục bộ; nên xuất tệp quan trọng trước.")
+                Text("Bản xuất tạm trên máy được dọn khi mở lại ứng dụng hoặc xóa hành trình tương ứng. Bản đã chia sẻ ra Tệp, iCloud hoặc dịch vụ khác không thể được ứng dụng thu hồi; bạn cần xóa riêng tại nơi đã nhận.")
             }
             Section("Khi sử dụng mạng") {
                 Text("Apple MapKit gửi truy vấn tìm kiếm và vị trí nguồn/đích tới dịch vụ Apple khi bạn yêu cầu tính tuyến. Nền bản đồ do Apple cung cấp theo chính sách riêng của Apple. Dự án không thể cam kết dịch vụ bên thứ ba không xử lý dữ liệu.")

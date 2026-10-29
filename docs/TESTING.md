@@ -30,7 +30,7 @@ xcodebuild test -project VietMap.xcodeproj -scheme VietMap \
   -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO
 ```
 
-- App tests: lưu / khôi phục cài đặt, từ chối nhập lỗi mà giữ tệp cũ, demo bundled bắt buộc true, phục hồi trip và không tạo lại checkpoint đã hoàn tất, kiểm tra đầu vào tải trước khi mạng chạy, khôi phục summary bị thiếu.
+- App tests: lưu / khôi phục cài đặt, từ chối nhập lỗi mà giữ tệp cũ, demo bundled bắt buộc true, phục hồi trip và không tạo lại checkpoint đã hoàn tất, kiểm tra đầu vào tải trước khi mạng chạy, khôi phục summary bị thiếu, xóa cả bản xuất tạm khi xóa trip.
 - UI smoke tests: khởi động → mô phỏng không GPS → mở / đóng HUD → dừng; mở màn hình dữ liệu chưa có gói thương mại.
 - Tham số `-ui-testing` bỏ onboarding và tắt giọng khi test, **không thay đổi cờ demo / engine lái thật**, không cung cấp tính năng trả phí.
 
@@ -43,6 +43,12 @@ python3 scripts/verify_ipa.py artifacts/VietMap-unsigned.ipa \
 ```
 
 Chỉ nhận một app `Payload/*.app`, plist iPhoneOS, executable đúng quyền thực thi, Mach-O arm64 với platform iOS device (không phải arm64 simulator), min iOS 17 và không còn chữ ký / profile của ứng dụng. Kiểm tra này không xác minh profile ESign của bạn.
+
+## Bằng chứng build ban đầu
+
+Run [40817578568](https://github.com/TradingLeak/VietMap/actions/runs/40817578568), commit `385c1c8`, đã hoàn tất thành công ngày **2026-10-29**: validation, Swift core tests, iOS unit/UI smoke tests, archive arm64, kiểm tra IPA và upload artifact. Các thay đổi sau commit đó cần dùng kết quả run tương ứng; xem tab Actions để biết trạng thái mới nhất.
+
+**Chưa thực hiện nghiệm thu iPhone thật / ESign thực tế.**
 
 ## Đọc kết quả GitHub
 

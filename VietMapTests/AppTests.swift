@@ -95,6 +95,23 @@ final class AppTests: XCTestCase {
         XCTAssertEqual(values.map(\.id), [trip.id])
     }
 
+    func testDeletingTripAlsoRemovesLocalExportCopies() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let store = TripStore(directory: folder.appendingPathComponent("records"), exportDirectory: folder.appendingPathComponent("exports"))
+        var trip = Trip(isDemo: true)
+        trip.finish(at: trip.startedAt)
+        try await store.finish(trip)
+        let gpx = try await store.export(trip.id, gpx: true)
+        let csv = try await store.export(trip.id, gpx: false)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: gpx.path))
+        try await store.remove(trip.id)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: gpx.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: csv.path))
+        let remaining = try await store.list()
+        XCTAssertTrue(remaining.isEmpty)
+    }
+
     private func makeDataset() -> TrafficDataset {
         TrafficDataset(id: "app-tests", version: "1", name: "Synthetic", updatedAt: Date(timeIntervalSince1970: 1_700_000_000),
                        source: DatasetSource(name: "Tests", url: "https://example.com", license: "CC0", attribution: "Synthetic"), isDemo: true,

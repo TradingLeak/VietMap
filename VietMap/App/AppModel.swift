@@ -87,9 +87,12 @@ final class AppModel: ObservableObject {
         do { importedDataset = try await traffic.load() }
         catch { errorMessage = "Không đọc được dữ liệu đã nhập: \(error.localizedDescription)" }
         do {
+            try await tripStore.clearExports()
             if try await tripStore.recoverInterruptedTrip() { notice = "Đã khôi phục hành trình bị gián đoạn từ bản lưu tự động gần nhất." }
-            trips = try await tripStore.list()
-        } catch { storageWarning = "Không đọc được lịch sử: \(error.localizedDescription)" }
+        } catch { storageWarning = "Không khôi phục được bản lưu tự động: \(error.localizedDescription)" }
+        // A corrupt checkpoint must not hide otherwise healthy completed trips.
+        do { trips = try await tripStore.list() }
+        catch { storageWarning = "Không đọc được lịch sử: \(error.localizedDescription)" }
         isBusy = false
         isReady = true
     }
@@ -159,9 +162,12 @@ final class AppModel: ObservableObject {
         updateIdleTimer()
         if var trip = currentTrip, !trip.points.isEmpty {
             trip.finish(at: Date())
+            // Block new sessions/data deletion until finalization has completed.
+            isBusy = true
             Task {
+                defer { isBusy = false }
                 do { try await tripStore.finish(trip); trips = try await tripStore.list() }
-                catch { storageWarning = "Không lưu được hành trình. Bản lưu tự động được giữ lại: \(error.localizedDescription)" }
+                catch { storageWarning = "Không lưu được hành trình. Có thể khôi phục phần đã lưu tự động nếu có: \(error.localizedDescription)" }
             }
         }
         currentTrip = nil
@@ -181,6 +187,7 @@ final class AppModel: ObservableObject {
         defer { isBusy = false }
         do { importedDataset = try await traffic.importRemote(urlText: url, expectedSHA256: checksum); importNotice() }
         catch is CancellationError { notice = "Đã hủy tải dữ liệu. Bộ dữ liệu trước đó không thay đổi." }
+        catch let error as URLError where error.code == .cancelled { notice = "Đã hủy tải dữ liệu. Bộ dữ liệu trước đó không thay đổi." }
         catch { errorMessage = error.localizedDescription }
     }
 

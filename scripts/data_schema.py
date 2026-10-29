@@ -19,7 +19,7 @@ def require(condition, message):
 
 
 def text(value, maximum=200, required=True):
-    return isinstance(value, str) and len(value) <= maximum and (bool(value.strip()) or not required)
+    return isinstance(value, str) and len(value) <= maximum and len(value.encode("utf-8")) <= maximum * 4 and (bool(value.strip()) or not required)
 
 
 def coordinate(value):

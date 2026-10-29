@@ -3,11 +3,14 @@ import VietMapCore
 
 actor TripStore {
     private let directory: URL
+    private let exportDirectory: URL
     private var finalized = Set<UUID>()
     private var activeURL: URL { directory.appendingPathComponent("active.json") }
 
-    init(directory: URL = AppDirectories.support.appendingPathComponent("Trips", isDirectory: true)) {
+    init(directory: URL = AppDirectories.support.appendingPathComponent("Trips", isDirectory: true),
+         exportDirectory: URL = FileManager.default.temporaryDirectory.appendingPathComponent("VietMapExports", isDirectory: true)) {
         self.directory = directory
+        self.exportDirectory = exportDirectory
     }
 
     func list() throws -> [TripSummary] {
@@ -64,18 +67,28 @@ actor TripStore {
     }
 
     func remove(_ id: UUID) throws {
+        for suffix in ["gpx", "csv"] {
+            let file = exportDirectory.appendingPathComponent("VietMap-\(id.uuidString).\(suffix)")
+            if FileManager.default.fileExists(atPath: file.path) { try FileManager.default.removeItem(at: file) }
+        }
         let url = directory.appendingPathComponent(id.uuidString)
         if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
     }
 
+    func clearExports() throws {
+        if FileManager.default.fileExists(atPath: exportDirectory.path) { try FileManager.default.removeItem(at: exportDirectory) }
+    }
+
     func deleteAll() throws {
+        try clearExports()
         if FileManager.default.fileExists(atPath: directory.path) { try FileManager.default.removeItem(at: directory) }
     }
 
     func export(_ id: UUID, gpx: Bool) throws -> URL {
         let trip = try load(id)
         let content = gpx ? TripExport.gpx(trip) : TripExport.csv(trip)
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("VietMap-\(id.uuidString).\(gpx ? "gpx" : "csv")")
+        try FileManager.default.createDirectory(at: exportDirectory, withIntermediateDirectories: true)
+        let url = exportDirectory.appendingPathComponent("VietMap-\(id.uuidString).\(gpx ? "gpx" : "csv")")
         try Data(content.utf8).write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         return url
     }

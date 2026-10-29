@@ -12,6 +12,8 @@
 
 Đây là kiểm tra kỹ thuật, không thay thế kiểm thử thiết bị hoặc xác minh dữ liệu.
 
+Build đầu tiên đã qua trên GitHub ngày 2026-10-29: run [40817578568](https://github.com/TradingLeak/VietMap/actions/runs/40817578568), commit `385c1c8`. Không dùng bằng chứng này thay cho nghiệm thu thiết bị thật hoặc cho thay đổi chưa chạy lại CI.
+
 ## Các cổng bắt buộc trước khi phát hành
 
 | Cổng | Việc chủ dự án cần hoàn tất |

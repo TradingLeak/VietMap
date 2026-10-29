@@ -118,6 +118,15 @@ class ProjectTests(unittest.TestCase):
             select({"devices": {}})
 
 
+class AnnotationTests(unittest.TestCase):
+    def test_errors_are_bounded_escaped_and_point_to_source(self):
+        from annotate_build_log import annotations
+        source = ROOT / "VietMap/Views/RootView.swift"
+        output = annotations(f"{source}:5:9: error: bad 100% value\n{source}:5:9: error: bad 100% value\nwarning: ignored", ROOT)
+        self.assertEqual(output, ["::error file=VietMap/Views/RootView.swift,line=5,col=9::bad 100%25 value"])
+        self.assertEqual(len(annotations("\n".join(f"error: failure {i}" for i in range(100)), ROOT)), 30)
+
+
 class IPATests(unittest.TestCase):
     def make_ipa(self, folder, *, cpu=0x0100000C, platform=2, signed=False, extra=None, executable=True):
         path = Path(folder) / "test.ipa"

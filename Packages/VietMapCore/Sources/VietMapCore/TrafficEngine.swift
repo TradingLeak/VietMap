@@ -152,7 +152,7 @@ public struct TrafficEngine: Sendable {
         for item in upcoming.prefix(3) {
             let band = item.distance <= 100 ? "near" : "ahead"
             let key = "\(item.id):\(band)"
-            guard announced[key] == nil else { continue }
+            guard announced[key].map({ now.timeIntervalSince($0) >= 60 }) ?? true else { continue }
             announced[key] = now
             // A close initial fix shouldn't queue two announcements for the same point.
             if band == "near" { announced["\(item.id):ahead"] = now }

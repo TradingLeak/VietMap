@@ -225,6 +225,23 @@ final class CoreTests: XCTestCase {
         XCTAssertTrue(tracker.update(away, now: away.timestamp).0?.isOffRoute ?? false)
     }
 
+    func testSameCameraCanWarnOnLaterPassAfterCooldown() throws {
+        let camera = TrafficHazard(id: "c", kind: .camera, name: "Test", coordinate: point(240), heading: 0)
+        var engine = try TrafficEngine(dataset: dataset(hazards: [camera]))
+        XCTAssertFalse(update(&engine, 0).announcements.isEmpty)
+        XCTAssertTrue(update(&engine, 1).announcements.isEmpty)
+        XCTAssertFalse(update(&engine, 70).announcements.isEmpty)
+    }
+
+    func testWhitespaceMetadataAndPathologicalUnicodeRejected() {
+        var value = dataset()
+        value.source.license = "   "
+        XCTAssertThrowsError(try value.validate())
+        value = dataset()
+        value.roads[0].name = "a" + String(repeating: "\u{0301}", count: 2_000)
+        XCTAssertThrowsError(try value.validate())
+    }
+
     func testInvalidRouteAndNaNFixDoNotCrash() {
         var tracker = RouteTracker(coordinates: [], instructions: [])
         XCTAssertNil(tracker.update(fix(), now: epoch).0)
