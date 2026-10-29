@@ -1,0 +1,2 @@
+id,kind,name,lat,lon,heading,speed_limit,road_id,is_end
+c1,camera,Camera hư cấu,20.253,105.975,0,60,r1,false

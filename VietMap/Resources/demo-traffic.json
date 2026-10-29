@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "id": "vietmap-simulation-only",
+  "version": "1.0.0",
+  "name": "Hành trình mô phỏng VietMap",
+  "updatedAt": "2026-10-29T00:00:00Z",
+  "source": {
+    "name": "VietMap · dữ liệu tự tạo",
+    "url": "https://github.com/TradingLeak/VietMap",
+    "license": "CC0-1.0 (synthetic fixture only)",
+    "attribution": "Các tọa độ, giới hạn và cảnh báo chỉ là ví dụ hư cấu; KHÔNG dùng để lái xe thực tế."
+  },
+  "isDemo": true,
+  "roads": [
+    {
+      "id": "demo-a",
+      "name": "Tuyến mô phỏng A · không phải dữ liệu thực",
+      "start": {
+        "latitude": 20.25,
+        "longitude": 105.975
+      },
+      "end": {
+        "latitude": 20.258,
+        "longitude": 105.975
+      },
+      "speedLimit": 60,
+      "direction": "both"
+    },
+    {
+      "id": "demo-b",
+      "name": "Tuyến mô phỏng B · không phải dữ liệu thực",
+      "start": {
+        "latitude": 20.258,
+        "longitude": 105.975
+      },
+      "end": {
+        "latitude": 20.266,
+        "longitude": 105.975
+      },
+      "speedLimit": 50,
+      "direction": "both"
+    },
+    {
+      "id": "demo-c",
+      "name": "Tuyến mô phỏng C · không phải dữ liệu thực",
+      "start": {
+        "latitude": 20.266,
+        "longitude": 105.975
+      },
+      "end": {
+        "latitude": 20.274,
+        "longitude": 105.975
+      },
+      "speedLimit": 80,
+      "direction": "both"
+    }
+  ],
+  "hazards": [
+    {
+      "id": "demo-camera",
+      "kind": "camera",
+      "name": "Camera giả lập",
+      "coordinate": {
+        "latitude": 20.2528,
+        "longitude": 105.975
+      },
+      "heading": 0,
+      "speedLimit": 60,
+      "roadID": "demo-a",
+      "isEnd": false
+    },
+    {
+      "id": "demo-residential",
+      "kind": "residential",
+      "name": "Khu dân cư giả lập",
+      "coordinate": {
+        "latitude": 20.256,
+        "longitude": 105.975
+      },
+      "heading": 0,
+      "speedLimit": null,
+      "roadID": "demo-a",
+      "isEnd": false
+    },
+    {
+      "id": "demo-limit",
+      "kind": "speedLimit",
+      "name": "Biển tốc độ giả lập",
+      "coordinate": {
+        "latitude": 20.2578,
+        "longitude": 105.975
+      },
+      "heading": 0,
+      "speedLimit": 50,
+      "roadID": "demo-a",
+      "isEnd": false
+    },
+    {
+      "id": "demo-no-overtake",
+      "kind": "noOvertaking",
+      "name": "Cấm vượt giả lập",
+      "coordinate": {
+        "latitude": 20.2598,
+        "longitude": 105.975
+      },
+      "heading": 0,
+      "speedLimit": null,
+      "roadID": "demo-b",
+      "isEnd": false
+    },
+    {
+      "id": "demo-light",
+      "kind": "trafficLight",
+      "name": "Đèn tín hiệu giả lập",
+      "coordinate": {
+        "latitude": 20.262,
+        "longitude": 105.975
+      },
+      "heading": 0,
+      "speedLimit": null,
+      "roadID": "demo-b",
+      "isEnd": false
+    },
+    {
+      "id": "demo-toll",
+      "kind": "toll",
+      "name": "Trạm thu phí giả lập",
+      "coordinate": {
+        "latitude": 20.264,
+        "longitude": 105.975
+      },
+      "heading": 0,
+      "speedLimit": null,
+      "roadID": "demo-b",
+      "isEnd": false
+    },
+    {
+      "id": "demo-tunnel",
+      "kind": "tunnel",
+      "name": "Hầm giả lập",
+      "coordinate": {
+        "latitude": 20.2685,
+        "longitude": 105.975
+      },
+      "heading": 0,
+      "speedLimit": null,
+      "roadID": "demo-c",
+      "isEnd": false
+    },
+    {
+      "id": "demo-rest",
+      "kind": "restArea",
+      "name": "Điểm nghỉ giả lập",
+      "coordinate": {
+        "latitude": 20.2715,
+        "longitude": 105.975
+      },
+      "heading": 0,
+      "speedLimit": null,
+      "roadID": "demo-c",
+      "isEnd": false
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+# Xcode / Swift build output
+DerivedData/
+.build/
+.swiftpm/
+**/xcuserdata/
+*.xcuserstate
+*.moved-aside
+*.xcscmblueprint
+*.xccheckout
+
+# Deliverables are CI artifacts, not repository content
+artifacts/
+*.ipa
+*.xcarchive/
+*.xcresult/
+*.dSYM/
+*.dSYMs.zip
+
+# Never commit signing material, API secrets or production datasets
+*.p12
+*.pfx
+*.mobileprovision
+*.provisionprofile
+*.cer
+*.key
+*.pem
+.env
+.env.*
+!.env.example
+private-data/
+
+# Local tooling
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+node_modules/
+.DS_Store
