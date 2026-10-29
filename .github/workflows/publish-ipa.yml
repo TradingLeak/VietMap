@@ -1,0 +1,113 @@
+name: Publish verified IPA direct download
+
+# Promote the exact, already tested device binary; do not silently rebuild it.
+on:
+  push:
+    branches: ['arena/**']
+    paths: ['.github/workflows/publish-ipa.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-vietmap-v1.0.0-build.5
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Verify artifact and publish direct IPA asset
+    if: github.repository == 'TradingLeak/VietMap'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN: '40819971850'
+      SOURCE_SHA: '6fe176d57d1f2edb5ec5b84034d51ff10501f4f7'
+      RELEASE_TAG: 'v1.0.0-build.5'
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5, Node 24
+        with:
+          persist-credentials: false
+      - name: Confirm source build succeeded on the expected commit
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN" > "$RUNNER_TEMP/source-run.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          run = json.loads((Path(os.environ['RUNNER_TEMP']) / 'source-run.json').read_text())
+          assert run['status'] == 'completed' and run['conclusion'] == 'success', 'Source build did not pass'
+          assert run['head_sha'] == os.environ['SOURCE_SHA'], 'Unexpected source commit'
+          assert run['head_repository']['full_name'] == os.environ['GITHUB_REPOSITORY'], 'Unexpected repository'
+          assert run['head_branch'] == 'arena/aae273d6-vietmap', 'Unexpected source branch'
+          PY
+      - name: Download the original verified artifact
+        run: |
+          gh run download "$SOURCE_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name VietMap-unsigned-ipa --dir "$RUNNER_TEMP/verified-ipa"
+      - name: Verify checksum, provenance and device IPA
+        run: |
+          cd "$RUNNER_TEMP/verified-ipa"
+          sha256sum --check SHA256SUMS.txt
+          cd "$GITHUB_WORKSPACE"
+          python3 scripts/verify_ipa.py "$RUNNER_TEMP/verified-ipa/VietMap-unsigned.ipa" --bundle-id vn.tradingleak.vietmap
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          folder = Path(os.environ['RUNNER_TEMP']) / 'verified-ipa'
+          info = json.loads((folder / 'build-info.json').read_text())
+          assert info['commit'] == os.environ['SOURCE_SHA'], 'IPA metadata commit mismatch'
+          assert info['version'] == '1.0.0' and info['build'] == '5', 'Unexpected version'
+          assert info['unsigned'] is True and info['architecture'] == 'arm64', 'Unexpected signing/platform'
+          actual = hashlib.sha256((folder / 'VietMap-unsigned.ipa').read_bytes()).hexdigest()
+          assert actual == info['sha256'], 'IPA hash does not match build metadata'
+          PY
+      - name: Publish verified binary as a prerelease asset
+        run: |
+          cat > "$RUNNER_TEMP/release-notes.md" <<'NOTES'
+          ## VietMap 1.0.0 · build 5 · unsigned iOS device IPA
+
+          Directly download **VietMap-unsigned.ipa** from Assets. No outer artifact ZIP needs extraction.
+
+          - iOS 17+, arm64; Bundle ID: `vn.tradingleak.vietmap`.
+          - Exact binary from successful run https://github.com/TradingLeak/VietMap/actions/runs/40819971850 (54 automated tests and device archive passed).
+          - Source commit: `6fe176d57d1f2edb5ec5b84034d51ff10501f4f7`.
+          - SHA-256 and build metadata are attached. No certificate or provisioning profile is embedded.
+          - Sign the IPA with your valid certificate/profile in ESign before installing. See the attached ESIGN.md.
+
+          **Prerelease:** not verified on a physical iPhone or with your ESign/profile. Only synthetic demo traffic data is bundled; real traffic data requires a lawful, current source. Independent project, not the official VIETMAP app; no guarantee of commercial readiness or zero defects.
+          NOTES
+          FOLDER="$RUNNER_TEMP/verified-ipa"
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            TARGET="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq .target_commitish)"
+            test "$TARGET" = "$SOURCE_SHA" || { echo '::error::Existing release targets a different commit'; exit 1; }
+            gh release upload "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --clobber \
+              "$FOLDER/VietMap-unsigned.ipa" "$FOLDER/SHA256SUMS.txt" \
+              "$FOLDER/build-info.json" "$FOLDER/ESIGN.md" "$FOLDER/VietMap-dSYMs.zip"
+          else
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --target "$SOURCE_SHA" --prerelease \
+              --title 'VietMap 1.0.0 (build 5) · unsigned IPA' \
+              --notes-file "$RUNNER_TEMP/release-notes.md" \
+              "$FOLDER/VietMap-unsigned.ipa" "$FOLDER/SHA256SUMS.txt" \
+              "$FOLDER/build-info.json" "$FOLDER/ESIGN.md" "$FOLDER/VietMap-dSYMs.zip"
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > "$RUNNER_TEMP/release.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          release = json.loads((Path(os.environ['RUNNER_TEMP']) / 'release.json').read_text())
+          assert not release['draft'], 'Release must be publicly downloadable'
+          asset = next(a for a in release['assets'] if a['name'] == 'VietMap-unsigned.ipa')
+          assert asset['state'] == 'uploaded' and asset['size'] > 0
+          folder = Path(os.environ['RUNNER_TEMP']) / 'verified-ipa'
+          actual = json.loads((folder / 'build-info.json').read_text())['sha256']
+          if asset.get('digest'):
+              assert asset['digest'] == 'sha256:' + actual, 'Release asset hash mismatch'
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('## Direct IPA download\n\n' + asset['browser_download_url'] + '\n\nUnsigned IPA: sign with a valid certificate/profile in ESign.\n')
+          print('Direct IPA:', asset['browser_download_url'])
+          PY
