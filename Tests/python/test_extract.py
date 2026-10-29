@@ -11,7 +11,7 @@ from pathlib import Path
 SCRIPT = Path(__file__).resolve().parents[2] / 'scripts' / 'extract_osm.py'
 class ExtractionTest(unittest.TestCase):
     def test_nodes_and_ways_preserve_tags_and_geometry(self):
-        osm = '''<osm version="0.6" generator="test"><node id="1" lat="21" lon="105"><tag k="highway" v="speed_camera"/><tag k="maxspeed" v="50"/></node><node id="2" lat="21.1" lon="105.1"><tag k="name" v="Đền Trần"/><tag k="tourism" v="attraction"/></node><way id="3"><nd ref="1"/><nd ref="2"/><tag k="highway" v="residential"/><tag k="maxspeed:forward" v="40"/></way><relation id="4"><member type="node" ref="1" role="device"/><member type="way" ref="3" role="from"/><tag k="type" v="enforcement"/><tag k="enforcement" v="maxspeed"/></relation><relation id="5"><member type="way" ref="3" role="from"/><member type="node" ref="2" role="via"/><member type="way" ref="3" role="to"/><tag k="type" v="restriction"/><tag k="restriction" v="no_right_turn"/></relation></osm>'''
+        osm = '''<osm version="0.6" generator="test"><node id="1" lat="21" lon="105"><tag k="highway" v="speed_camera"/><tag k="maxspeed" v="50"/></node><node id="6" lat="21.0001" lon="105.0001"><tag k="man_made" v="surveillance"/></node><node id="2" lat="21.1" lon="105.1"><tag k="name" v="Đền Trần"/><tag k="tourism" v="attraction"/></node><way id="3"><nd ref="1"/><nd ref="2"/><tag k="highway" v="residential"/><tag k="maxspeed:forward" v="40"/></way><relation id="4"><member type="node" ref="1" role="device"/><member type="way" ref="3" role="from"/><tag k="type" v="enforcement"/><tag k="enforcement" v="maxspeed"/></relation><relation id="5"><member type="way" ref="3" role="from"/><member type="node" ref="2" role="via"/><member type="way" ref="3" role="to"/><tag k="type" v="restriction"/><tag k="restriction" v="no_right_turn"/></relation></osm>'''
         with tempfile.TemporaryDirectory() as d:
             source = Path(d) / 'test.osm'; source.write_text(osm)
             out = Path(d) / 'out'
@@ -22,6 +22,8 @@ class ExtractionTest(unittest.TestCase):
             db = sqlite3.connect(out / 'vietnam-traffic.sqlite')
             rows = db.execute('SELECT osm_type, tags, geometry FROM features ORDER BY osm_type').fetchall()
             self.assertEqual(len(rows), 2)
+            camera_rows = db.execute("SELECT osm_id FROM features WHERE osm_type = 'node' AND latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ? AND (category LIKE '%speed_camera%' OR category LIKE '%traffic_sign%')", (20.99, 21.01, 104.99, 105.01)).fetchall()
+            self.assertEqual(camera_rows, [(1,)])
             self.assertEqual(json.loads(rows[0][1])['highway'], 'speed_camera')
             self.assertEqual(len(json.loads(rows[1][2])), 2)
             self.assertEqual(db.execute('SELECT name, normalized FROM places').fetchone(), ('Đền Trần', 'den tran'))

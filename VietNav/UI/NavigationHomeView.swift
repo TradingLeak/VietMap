@@ -5,6 +5,7 @@ struct NavigationHomeView: View {
     @StateObject private var map = MapModel()
     @State private var showSearch = false
     @State private var showSettings = false
+    @State private var showNearby = false
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.openURL) private var openURL
 
@@ -42,6 +43,7 @@ struct NavigationHomeView: View {
                             control(map.pitch > 0 ? "view.2d" : "view.3d", label: map.pitch > 0 ? "Chuyển bản đồ 2D" : "Chuyển bản đồ 3D") { map.pitch = map.pitch > 0 ? 0 : 45 }
                             control("location.fill", label: "Về vị trí của tôi") { map.locate() }
                             control(map.soundEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill", label: map.soundEnabled ? "Tắt âm thanh" : "Bật âm thanh") { map.soundEnabled.toggle() }
+                            control("bell", label: "Điểm OSM gần đây") { showNearby = true }
                             control("slider.horizontal.3", label: "Cài đặt") { showSettings = true }
                         }.frame(maxWidth: .infinity)
                     }.frame(width: 52)
@@ -59,6 +61,7 @@ struct NavigationHomeView: View {
         }
         .sheet(isPresented: $showSearch) { SearchView(model: map) }
         .sheet(isPresented: $showSettings) { SettingsView(model: map) }
+        .sheet(isPresented: $showNearby) { NearbyOSMView(model: map) }
         .onChange(of: scenePhase) { phase in if phase == .background { map.stop() } }
     }
     private var displayedSpeed: Double? {
@@ -241,6 +244,58 @@ private struct SearchView: View {
         }
     }
 }
+private struct NearbyOSMView: View {
+    @ObservedObject var model: MapModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var points: [NearbyOSM] = []
+    @State private var message = ""
+    @State private var loading = false
+    var body: some View {
+        NavigationView {
+            List {
+                Section {
+                    Text("Dữ liệu cộng đồng chưa xác minh, có thể thiếu hoặc sai. Khoảng cách là đường chim bay; chưa xác định được hướng, tuyến đường hoặc mức áp dụng. Không dùng để lái xe.")
+                        .font(.footnote).foregroundColor(.secondary)
+                    Button("Cập nhật vị trí") { model.locate() }
+                    Button(loading ? "Đang tìm…" : "Tìm điểm trong bán kính 2 km") { Task { await refresh() } }.disabled(loading)
+                    if !message.isEmpty { Text(message).font(.footnote).foregroundColor(.secondary) }
+                }
+                if !points.isEmpty {
+                    Section("ĐIỂM THEO OSM · CHƯA XÁC MINH") {
+                        ForEach(points) { point in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(point.title).font(.headline)
+                                Text("Cách khoảng \(Int(point.distance.rounded())) m · \(point.detail)")
+                                    .font(.footnote).foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Điểm gần đây").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("Đóng") { dismiss() } } }
+            .task { await refresh() }
+        }
+    }
+    private func refresh() async {
+        guard !loading else { return }
+        guard let location = model.location, location.horizontalAccuracy >= 0,
+              location.horizontalAccuracy <= 100, abs(location.timestamp.timeIntervalSinceNow) < 30 else {
+            points = []; message = "Cần vị trí GPS mới, độ chính xác trong 100 m. Nhấn Cập nhật vị trí và cấp quyền."; return
+        }
+        loading = true
+        defer { loading = false }
+        do {
+            let lat = location.coordinate.latitude, lon = location.coordinate.longitude
+            let found = try await Task.detached(priority: .userInitiated) { try NearbyOSMSearch.search(latitude: lat, longitude: lon) }.value
+            points = found
+            message = found.isEmpty ? "Không tìm thấy điểm được gắn thẻ trong dữ liệu; điều này không có nghĩa là không có camera hay biển báo." : "Tìm thấy \(found.count) điểm; không phải cảnh báo theo tuyến."
+        } catch {
+            points = []; message = error.localizedDescription
+        }
+    }
+}
+
 private struct SettingsView: View {
     @ObservedObject var model: MapModel
     @StateObject private var updater = TrafficUpdateStore()

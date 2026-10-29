@@ -33,3 +33,5 @@ Tìm kiếm offline dùng tên OSM của node/way trong SQLite, hỗ trợ bỏ 
 Bộ trích xuất hiện lưu thêm dữ liệu đường và quan hệ cấm rẽ dưới dạng thô để chuẩn bị cho tính tuyến. Định dạng `road_ways.nodes` gồm các bản ghi 16 byte little-endian: ID nút int64, kinh độ int32 và vĩ độ int32 theo đơn vị 1e-7 độ. Hiện **chưa có công cụ tính tuyến hoặc diễn giải hạn chế rẽ**; dữ liệu đường không đồng nghĩa bản đồ offline.
 
 Bộ lõi đồ thị tham chiếu `scripts/routing/motorcycle.py` và các kiểm thử là bước nghiên cứu độc lập, chưa chạy trên iPhone, chưa xử lý tất cả quy tắc OSM hoặc dữ liệu toàn quốc, và tuyệt đối không được dùng để dẫn đường thực tế. Một số hạn chế rẽ phức tạp được từ chối thay vì diễn giải tùy tiện.
+
+Mục “Điểm OSM gần đây” trong app cho phép tra thủ công các node có tag biển báo hoặc camera tốc độ trong bán kính 2 km từ vị trí GPS gần đây. Khoảng cách tính đường chim bay, không xác định hướng hoặc đường áp dụng; danh sách có giới hạn và dữ liệu chưa xác minh, không phải cảnh báo dẫn đường hay bằng chứng không có camera/biển báo. Không xem hoặc thao tác khi đang lái xe.
