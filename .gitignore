@@ -4,17 +4,4 @@
 DerivedData/
 *.xcodeproj/
 *.xcworkspace/
-osm-export/
-
-# Seed được tạo từ OSM có thể rất lớn; lưu trữ/phân phối riêng.
-VietNav/Resources/InitialData/vietnam_traffic.sqlite
-*.sqlite-wal
-*.sqlite-shm
-# Dữ liệu OSM và artifact cục bộ, không commit dataset lớn
-osm-data/
-*.osm.pbf
 *.xcresult/
-
-# Python bytecode
-__pycache__/
-*.py[cod]

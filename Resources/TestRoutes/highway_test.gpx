@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="VietNav synthetic test" xmlns="http://www.topografix.com/GPX/1/1">
-  <wpt lat="20.99" lon="105.89"><time>2026-01-01T00:00:00Z</time><name>synthetic start</name></wpt>
-  <wpt lat="20.96" lon="105.92"><time>2026-01-01T00:01:00Z</time><name>synthetic camera test point</name></wpt>
-  <wpt lat="20.93" lon="105.95"><time>2026-01-01T00:02:00Z</time><name>synthetic end</name></wpt>
-</gpx>

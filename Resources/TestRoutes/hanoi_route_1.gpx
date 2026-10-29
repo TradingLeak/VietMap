@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="VietNav synthetic test" xmlns="http://www.topografix.com/GPX/1/1">
-  <wpt lat="21.0285" lon="105.8542"><time>2026-01-01T00:00:00Z</time><name>Ho Guom</name></wpt>
-  <wpt lat="21.05" lon="105.82"><time>2026-01-01T00:01:00Z</time><name>synthetic point</name></wpt>
-  <wpt lat="21.11" lon="105.81"><time>2026-01-01T00:02:00Z</time><name>synthetic point</name></wpt>
-  <wpt lat="21.2212" lon="105.8072"><time>2026-01-01T00:03:00Z</time><name>Noi Bai</name></wpt>
-</gpx>
