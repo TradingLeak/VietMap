@@ -132,7 +132,7 @@ jobs:
           BUILD_NUMBER: ${{ github.run_number }}
         run: bash scripts/build_ipa.sh
       - name: Upload ESign-ready package
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5 (Node 24)
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6 (Node 24)
         with:
           name: VietMap-unsigned-ipa
           if-no-files-found: error
@@ -148,7 +148,7 @@ jobs:
         run: python3 scripts/annotate_build_log.py artifacts/core-tests.log artifacts/build-for-tests.log artifacts/ios-unit-tests.log artifacts/ios-ui-tests.log artifacts/archive.log
       - name: Upload test results and diagnostics
         if: always()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5 (Node 24)
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6 (Node 24)
         with:
           name: VietMap-test-results
           if-no-files-found: warn

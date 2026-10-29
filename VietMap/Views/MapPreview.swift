@@ -13,7 +13,7 @@ struct MapPreview: View {
             if model.settings.mapDisplay == .offline {
                 OfflineMapView()
             } else {
-                Map(position: $camera) {
+                Map(position: $camera, interactionModes: showRoutePreview ? .all : []) {
                     if model.mode == .live { UserAnnotation() }
                     if model.mode == .demo, let coordinate = model.lastCoordinate {
                         Annotation("Mô phỏng", coordinate: coordinate.clCoordinate) {

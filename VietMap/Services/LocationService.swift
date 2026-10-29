@@ -60,7 +60,12 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
         manager.startUpdatingLocation()
     }
 
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+    // Delegate requirements are nonisolated. Only Sendable snapshots cross to the UI actor.
+    nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        Task { @MainActor [weak self] in self?.authorizationChanged() }
+    }
+
+    private func authorizationChanged() {
         authorization = manager.authorizationStatus
         precise = manager.accuracyAuthorization == .fullAccuracy
         guard wantsUpdates else { return }
@@ -74,26 +79,31 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
         }
     }
 
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard wantsUpdates else { return }
-        errorMessage = nil
-        for value in locations.sorted(by: { $0.timestamp < $1.timestamp }) {
-            // Invalid GPS speed/course are unknown, never zero and never a fabricated heading.
-            let fix = LocationFix(coordinate: Coordinate(value.coordinate),
-                                  speedMPS: value.speed >= 0 && (0...5).contains(value.speedAccuracy) ? value.speed : nil,
-                                  heading: value.course >= 0 && (0...45).contains(value.courseAccuracy) ? value.course : nil,
-                                  horizontalAccuracy: value.horizontalAccuracy, timestamp: value.timestamp)
-            onFix?(fix)
+    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        let fixes = locations.sorted(by: { $0.timestamp < $1.timestamp }).map { value in
+            LocationFix(coordinate: Coordinate(value.coordinate),
+                        speedMPS: value.speed >= 0 && (0...5).contains(value.speedAccuracy) ? value.speed : nil,
+                        heading: value.course >= 0 && (0...45).contains(value.courseAccuracy) ? value.course : nil,
+                        horizontalAccuracy: value.horizontalAccuracy, timestamp: value.timestamp)
+        }
+        Task { @MainActor [weak self] in
+            guard let self, self.wantsUpdates else { return }
+            self.errorMessage = nil
+            for fix in fixes { self.onFix?(fix) }
         }
     }
 
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        if (error as? CLError)?.code == .denied {
-            errorMessage = "iOS từ chối quyền vị trí."
-            stop()
-            onDenied?()
-        } else {
-            errorMessage = "Đang tìm lại tín hiệu GPS. Hãy đặt điện thoại ở nơi thoáng."
+    nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        let denied = (error as? CLError)?.code == .denied
+        Task { @MainActor [weak self] in
+            guard let self, self.wantsUpdates else { return }
+            if denied {
+                self.errorMessage = "iOS từ chối quyền vị trí."
+                self.stop()
+                self.onDenied?()
+            } else {
+                self.errorMessage = "Đang tìm lại tín hiệu GPS. Hãy đặt điện thoại ở nơi thoáng."
+            }
         }
     }
 }

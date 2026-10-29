@@ -9,6 +9,7 @@ final class SpeechService: NSObject, ObservableObject, AVSpeechSynthesizerDelega
     private var pending: [Announcement] = []
     private var currentPriority = 0
     private var currentText: String?
+    private var activeUtteranceID: ObjectIdentifier?
     private var enabled = true
     private var identifier: String?
     private var rate: Float = 0.48
@@ -49,6 +50,7 @@ final class SpeechService: NSObject, ObservableObject, AVSpeechSynthesizerDelega
     func stop() {
         pending.removeAll()
         currentText = nil
+        activeUtteranceID = nil
         currentPriority = 0
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
         deactivateAudio()
@@ -80,6 +82,7 @@ final class SpeechService: NSObject, ObservableObject, AVSpeechSynthesizerDelega
         utterance.voice = voice
         utterance.rate = rate
         utterance.volume = 1
+        activeUtteranceID = ObjectIdentifier(utterance)
         synthesizer.speak(utterance)
     }
 
@@ -88,13 +91,19 @@ final class SpeechService: NSObject, ObservableObject, AVSpeechSynthesizerDelega
         catch { warning = "Không khôi phục được phiên âm thanh. Hãy kiểm tra âm thanh iOS." }
     }
 
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        currentPriority = 0
-        currentText = nil
-        if pending.isEmpty { deactivateAudio() } else { playNext() }
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        let identifier = ObjectIdentifier(utterance)
+        Task { @MainActor [weak self] in self?.utteranceEnded(identifier) }
     }
 
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        let identifier = ObjectIdentifier(utterance)
+        Task { @MainActor [weak self] in self?.utteranceEnded(identifier) }
+    }
+
+    private func utteranceEnded(_ identifier: ObjectIdentifier) {
+        guard activeUtteranceID == identifier else { return }
+        activeUtteranceID = nil
         currentPriority = 0
         currentText = nil
         if pending.isEmpty { deactivateAudio() } else { playNext() }

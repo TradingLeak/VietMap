@@ -125,6 +125,7 @@ class AnnotationTests(unittest.TestCase):
         output = annotations(f"{source}:5:9: error: bad 100% value\n{source}:5:9: error: bad 100% value\nwarning: ignored", ROOT)
         self.assertEqual(output, ["::error file=VietMap/Views/RootView.swift,line=5,col=9::bad 100%25 value"])
         self.assertEqual(len(annotations("\n".join(f"error: failure {i}" for i in range(100)), ROOT)), 30)
+        self.assertEqual(annotations("    func locationManager(didFailWithError: Error) {\nwarning: inspect didFailWithError:", ROOT), [])
 
 
 class IPATests(unittest.TestCase):

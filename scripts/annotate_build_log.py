@@ -29,7 +29,7 @@ def annotations(text: str, root: Path):
             else:
                 attributes = ""
             value = f"::error{attributes}::{escape(message[:3500])}"
-        elif ("error:" in line.lower() or ("Test Case" in line and "failed" in line) or line.startswith("ld:")):
+        elif (re.search(r"(?:^|\s)error:", line, re.IGNORECASE) or ("Test Case" in line and "failed" in line) or line.startswith("ld:")):
             value = f"::error::{escape(line[:3500])}"
         else:
             continue
