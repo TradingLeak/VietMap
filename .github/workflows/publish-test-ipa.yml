@@ -1,0 +1,35 @@
+name: Publish existing test IPA
+on:
+  push:
+    branches: [arena/c38737e1-vietmap]
+    paths: [.github/workflows/publish-test-ipa.yml]
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: VietNav-unsigned
+          run-id: 40896643141
+          github-token: ${{ github.token }}
+          path: ipa
+      - name: Publish unsigned IPA
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          test -s ipa/VietNav-unsigned.ipa
+          TAG="vietnav-preview-40896643141"
+          gh release create "$TAG" --draft --prerelease --latest=false --target "$GITHUB_SHA" --title "VietNav bản thử nghiệm — IPA chưa ký" --notes "Bản thử nghiệm chưa có dẫn đường hoặc cảnh báo tự động; không dùng khi lái xe. IPA chưa ký, cần ký bằng chứng chỉ phù hợp."
+          ok=0
+          for attempt in 1 2 3; do
+            if gh release upload "$TAG" ipa/VietNav-unsigned.ipa --clobber; then ok=1; break; fi
+            echo "Upload attempt $attempt failed"
+          done
+          if [ "$ok" -ne 1 ]; then echo '::error::Upload failed; release remains a draft'; exit 1; fi
+          gh release edit "$TAG" --draft=false --latest=false
